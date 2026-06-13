@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using SpottyUTA.Data;
+
 namespace SpottyUTA
 {
     public class Program
@@ -8,7 +11,8 @@ namespace SpottyUTA
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-
+            builder.Services.AddDbContext<SpottyUtaContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
