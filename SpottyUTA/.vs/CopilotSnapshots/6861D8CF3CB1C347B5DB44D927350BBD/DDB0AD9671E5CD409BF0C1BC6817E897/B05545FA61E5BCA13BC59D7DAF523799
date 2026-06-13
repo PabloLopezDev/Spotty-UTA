@@ -1,0 +1,127 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using SpottyUTA.Data;
+using SpottyUTA.Models;
+using Microsoft.AspNetCore.SignalR;
+using SpottyUTA.Hubs;
+using Microsoft.AspNetCore.SignalR; // 🚨 NUEVO
+using SpottyUTA.Hubs;              // 🚨 NUEVO (Asegúrate de que tu carpeta se llame Hubs)
+
+namespace SpottyUTA.Controllers
+{
+    public class ReservasController : Controller
+    {
+        private readonly SpottyUtaContext _context;
+        private readonly IHubContext<SalasHub> _hubContext; // 🚨 NUEVO: Contexto para manejar SignalR
+
+        // Modificamos el constructor para inyectar el Hub de salas
+        public ReservasController(SpottyUtaContext context, IHubContext<SalasHub> hubContext)
+        {
+            _context = context;
+            _hubContext = hubContext; // Guardamos la referencia
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearReserva(int salaId, int usuarioId, string horaInput)
+        {
+            if (!TimeOnly.TryParse(horaInput, out TimeOnly horaInicio))
+            {
+                TempData["ErrorMessage"] = "El formato de hora ingresado no es válido.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            TimeOnly horaFinSugerida = horaInicio.AddHours(2);
+            var fechaHoy = DateOnly.FromDateTime(DateTime.Now);
+
+            var reservasExistentes = await _context.Reservas
+                .Where(r => r.SalaId == salaId && r.Fecha == fechaHoy && r.EstadoReserva == "A")
+                .OrderBy(r => r.HoraInicio)
+                .ToListAsync();
+
+            foreach (var reserva in reservasExistentes)
+            {
+                if (horaInicio >= reserva.HoraInicio && horaInicio < reserva.HoraFin)
+                {
+                    TempData["ErrorMessage"] = $"El box ya se encuentra ocupado en ese horario ({reserva.HoraInicio:HH:mm} - {reserva.HoraFin:HH:mm}).";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                if (reserva.HoraInicio > horaInicio && reserva.HoraInicio < horaFinSugerida)
+                {
+                    horaFinSugerida = reserva.HoraInicio;
+                }
+            }
+
+            var nuevaReserva = new Reserva
+            {
+                SalaId = salaId,
+                UsuarioId = usuarioId,
+                Fecha = fechaHoy,
+                HoraInicio = horaInicio,
+                HoraFin = horaFinSugerida,
+                EstadoReserva = "A" // Sincronizado con la "A" que lee el Home
+            };
+
+            try
+            {
+                _context.Reservas.Add(nuevaReserva);
+                await _context.SaveChangesAsync();
+
+                // 🚨 ¡LA MAGIA EN TIEMPO REAL AQUÍ!
+                // Construimos payload con estados actuales para enviar por SignalR y evitar fetch extra
+                try
+                {
+                    var ahoraNotif = DateTime.Now;
+                    var fechaNotif = DateOnly.FromDateTime(ahoraNotif);
+                    var horaNotif = TimeOnly.FromDateTime(ahoraNotif);
+
+                    var reservasHoyNotif = await _context.Reservas
+                        .Where(r => r.Fecha == fechaNotif && r.EstadoReserva != "C")
+                        .ToListAsync();
+
+                    var salasNotif = await _context.Salas.ToListAsync();
+                    var payload = new List<object>();
+
+                    foreach (var s in salasNotif)
+                    {
+                        string estado = "D";
+                        var reservasDeEstaSala = reservasHoyNotif.Where(r => r.SalaId == s.Id).ToList();
+                        var reservaActual = reservasDeEstaSala.FirstOrDefault(r => horaNotif >= r.HoraInicio && horaNotif < r.HoraFin);
+                        if (reservaActual != null)
+                        {
+                            double minutosTranscurridos = (horaNotif.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
+                            estado = minutosTranscurridos <= 15 ? "R" : "O";
+                        }
+                        else
+                        {
+                            bool proximaReservaCercana = reservasDeEstaSala.Any(r => r.HoraInicio > horaNotif && (r.HoraInicio.ToTimeSpan() - horaNotif.ToTimeSpan()).TotalMinutes <= 20);
+                            estado = proximaReservaCercana ? "R" : "D";
+                        }
+
+                        payload.Add(new { Id = s.Id, Estado = estado });
+                    }
+
+                    await _hubContext.Clients.All.SendAsync("ActualizarMatrizSalas", payload);
+                }
+                catch
+                {
+                    // No bloquear la operación si SignalR falla
+                    await _hubContext.Clients.All.SendAsync("ActualizarMatrizSalas");
+                }
+
+                TempData["MostrarModalExito"] = true;
+                TempData["BloqueAsignado"] = $"{horaInicio:HH:mm} - {horaFinSugerida:HH:mm}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error de BD: {ex.Message}";
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+    }
+}

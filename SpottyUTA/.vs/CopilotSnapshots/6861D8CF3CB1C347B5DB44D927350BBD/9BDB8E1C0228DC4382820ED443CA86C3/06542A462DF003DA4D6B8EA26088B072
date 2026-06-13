@@ -1,0 +1,425 @@
+﻿@model IEnumerable<SpottyUTA.Models.Sala>
+
+@{
+    ViewData["Title"] = "Panel de Salas - Spotty UTA";
+    var reservasHoy = ViewBag.ReservasHoy as List<SpottyUTA.Models.Reserva> ?? new List<SpottyUTA.Models.Reserva>();
+    var horaActualTime = TimeOnly.FromDateTime(DateTime.Now);
+    var nombresSalas = Model.Select(s => s.Nombre).Distinct().OrderBy(n => n).ToList();
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fa;
+        color: #333333;
+        font-size: 0.95rem;
+    }
+    
+    .uta-navbar { 
+        background-color: #1D1D3B; 
+        padding: 14px 24px; 
+        color: white; 
+    }
+    .uta-logo-badge { 
+        background-color: #E6B325; 
+        color: #1D1D3B; 
+        font-weight: 700; 
+        padding: 3px 8px; 
+        border-radius: 4px; 
+        font-size: 0.8rem; 
+    }
+    .menu-icon-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.4rem; 
+        cursor: pointer;
+    }
+
+    .alert-jornada {
+        background-color: #fffdec;
+        border-left: 5px solid #ff9f1c;
+        color: #534300;
+        font-size: 0.9rem;
+        padding: 15px !important;
+        border-radius: 6px;
+    }
+
+    .leyenda-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        background-color: #ffffff;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #e3e6f0;
+        max-width: 1100px;
+        margin: 0 auto 15px auto;
+    }
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .leyenda-cuadro {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+
+    /* --- MATRIZ PC --- */
+    .matriz-contenedor-pc {
+        max-width: 1200px; 
+        margin: 0 auto;
+    }
+    .matriz-tabla {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 12px; 
+    }
+    .matriz-header-piso {
+        background-color: #1D1D3B !important;
+        color: white !important;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.95rem; 
+        padding: 12px;
+        border-radius: 4px;
+    }
+    .matriz-label-sala {
+        font-weight: 700;
+        color: #1D1D3B;
+        font-size: 1rem; 
+        vertical-align: middle;
+        padding-right: 20px;
+        white-space: nowrap;
+    }
+
+    /* --- CUADROS DE ESTADO --- */
+    .sala-matriz-container {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        height: 95px; 
+        width: 100%;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+        transition: transform 0.1s ease;
+    }
+    .sala-matriz-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+    }
+    .sala-matriz-btn {
+        border: none;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        color: white !important;
+    }
+    .estado-letra {
+        font-size: 2.3rem; 
+        font-weight: 700;
+        line-height: 1;
+    }
+    .sala-sub-text {
+        font-size: 0.72rem; 
+        opacity: 0.85;
+        font-weight: 600;
+        margin-top: 3px;
+    }
+
+    .bg-disponible { background-color: #28a745 !important; }
+    .bg-reservado { background-color: #ff9f1c !important; }
+    .bg-ocupado { background-color: #dc3545 !important; }
+
+    .sala-progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 6px; 
+        background-color: rgba(255, 255, 255, 0.45);
+        z-index: 3;
+    }
+
+    /* --- VISTA MÓVIL --- */
+    .btn-piso-selector { background-color: #1D1D3B; color: white; font-weight: 600; border: none; transition: all 0.15s ease; padding: 10px 0; font-size: 0.9rem; border-radius: 6px; }
+    .btn-piso-selector.active { background-color: #0d6efd !important; box-shadow: 0 3px 8px rgba(13, 110, 253, 0.3); }
+    .card-sala-movil { background-color: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .label-sala-movil { font-weight: 600; color: #333333; font-size: 0.85rem; min-width: 60px; }
+
+    /* --- MODAL ADAPTATIVO (REPARADO) --- */
+    .modal-uta-fino { 
+        margin: 10px; 
+    }
+    
+    @@media (min-width: 576px) {
+        .modal-uta-fino {
+            max-width: 380px !important; 
+            margin: 1.75rem auto; 
+        }
+    }
+
+    .modal-content-uta { border-radius: 8px; border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .modal-header-uta { background-color: #1D1D3B; color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; }
+    .modal-header-uta .modal-title { font-size: 0.85rem; font-weight: 600; }
+    .time-input-subtle { max-width: 140px; font-size: 0.95rem; font-weight: 600; border: 1.5px solid #d1d3e2; border-radius: 4px; padding: 4px; }
+    .agenda-title { font-size: 0.7rem; font-weight: 600; color: #858796; text-transform: uppercase; }
+    .action-row-container { display: flex; flex-direction: column; gap: 10px; background-color: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e3e6f0; }
+    .action-row-top { display: flex; align-items: start; }
+    .btn-confirmar-block { background-color: #1D1D3B; color: white; font-weight: 600; font-size: 0.8rem; padding: 8px; border: none; border-radius: 4px; width: 100%; text-transform: uppercase; }
+    .btn-confirmar-block:disabled { background-color: #a3a6b5; opacity: 0.5; }
+</style>
+
+<div class="w-100 uta-navbar d-flex align-items-center justify-content-between mb-3 shadow-sm">
+    <div class="d-flex align-items-center gap-2">
+        <span class="uta-logo-badge">UTA</span>
+        <span class="fw-semibold small" style="font-size: 0.8rem; letter-spacing: 0.3px;">SPOTTY UTA <span class="fw-normal opacity-50">| Saucache</span></span>
+    </div>
+    <button type="button" class="menu-icon-btn">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</div>
+
+<div class="container-fluid" style="max-width: 1150px; margin: 0 auto; padding: 0 15px;">
+    
+    @if ((DayOfWeek)ViewBag.DiaSemana == DayOfWeek.Sunday)
+    {
+        <div class="alert alert-danger small fw-semibold mb-3 border-0 py-2 text-center shadow-sm">
+            🚨 LA BIBLIOTECA PERMANECE COMPLETAMENTE CERRADA LOS DOMINGOS.
+        </div>
+    }
+    else if ((DayOfWeek)ViewBag.DiaSemana == DayOfWeek.Saturday)
+    {
+        <div class="alert alert-jornada fw-medium mb-3 p-3 shadow-sm" role="alert" style="margin: 0;">
+            <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> <strong>JORNADA DE FIN DE SEMANA (09:00 a 13:00 hrs):</strong> Solo sectores del 1° Piso habilitados.
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success small fw-semibold my-3 border-0 py-2 shadow-sm" style="border-left: 4px solid #28a745 !important; margin: 15px 0 0 0;">✅ @TempData["SuccessMessage"]</div> }
+    @if (TempData["WarningMessage"] != null) { <div class="alert alert-warning small fw-semibold text-dark my-3 border-0 py-2 shadow-sm" style="border-left: 4px solid #ff9f1c !important; margin: 15px 0 0 0;">⚠️ @TempData["WarningMessage"]</div> }
+    @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger small fw-semibold my-3 border-0 py-2 shadow-sm" style="margin: 15px 0 0 0;">❌ @TempData["ErrorMessage"]</div> }
+
+    <div class="leyenda-container mb-3" style="max-width: 100%; margin: 15px 0;">
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #28a745;"></span> <span class="text-muted">Disponible</span></div>
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #ff9f1c;"></span> <span class="text-muted">Reservado (&lt; 20 min)</span></div>
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #dc3545;"></span> <span class="text-muted">Ocupado</span></div>
+    </div>
+
+    <!-- 🖥️ VISTA ESCRITORIO -->
+    <div class="d-none d-md-block table-responsive mb-4 rounded border bg-white p-4 shadow-sm" style="max-width: 100%;">
+        <table class="matriz-tabla">
+            <thead>
+                <tr>
+                    <th style="width: 80px;"></th>
+                    <th class="matriz-header-piso">Primer Piso</th>
+                    <th class="matriz-header-piso">Segundo Piso</th>
+                    <th class="matriz-header-piso">Tercer Piso</th>
+                    <th class="matriz-header-piso">Cuarto Piso</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var nombreSala in nombresSalas)
+                {
+                    <tr>
+                        <td class="matriz-label-sala text-center">@nombreSala</td>
+                        @for (int piso = 1; piso <= 4; piso++)
+                        {
+                            var sala = Model.FirstOrDefault(s => s.Nombre == nombreSala && s.Piso == piso);
+                            <td>
+                                @if (sala != null)
+                                {
+                                    string bgClase = sala.EstadoActual switch { "D" => "bg-disponible", "R" => "bg-reservado", "O" => "bg-ocupado", _ => "bg-secondary" };
+                                    var (porcentaje, jsonAgenda) = CalcularProgresoYAgenda(sala, reservasHoy, horaActualTime);
+
+                                    <div class="sala-matriz-container @bgClase">
+                                        <button type="button" class="sala-matriz-btn" data-bs-toggle="modal" data-bs-target="#modalReserva" data-sala-id="@sala.Id" data-sala-nombre="@sala.Nombre" data-sala-piso="@piso" data-agenda='@jsonAgenda'>
+                                            <span class="estado-letra">@sala.EstadoActual</span>
+                                            <span class="sala-sub-text">Box @sala.Id</span>
+                                        </button>
+                                        @if (porcentaje > 0) { <div class="sala-progress-bar" style="width: @porcentaje.ToString("0")%;"></div> }
+                                    </div>
+                                }
+                                else { 
+                                    <div class="sala-matriz-container bg-light d-flex align-items-center justify-content-center rounded border">
+                                        <span class="text-muted fw-semibold" style="font-size: 0.78rem; letter-spacing: 0.3px;">Inactiva</span>
+                                    </div> 
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 📱 VISTA MÓVIL -->
+    <div class="d-block d-md-none mb-4">
+        <div class="row g-2 mb-3 text-center">
+            @for (int p = 1; p <= 4; p++)
+            {
+                <div class="col-3">
+                    <button type="button" class="btn w-100 btn-piso-selector @(p == 1 ? "active" : "")" id="btn-piso-@p" onclick="cambiarPisoMovil(@p)">
+                        @p
+                    </button>
+                </div>
+            }
+        </div>
+
+        @for (int piso = 1; piso <= 4; piso++)
+        {
+            <div id="contenedor-piso-movil-@piso" class="piso-movil-seccion d-flex flex-column gap-2 @(piso == 1 ? "" : "d-none")">
+                @foreach (var sala in Model.Where(s => s.Piso == piso).OrderBy(s => s.Nombre))
+                {
+                    string bgClase = sala.EstadoActual switch { "D" => "bg-disponible", "R" => "bg-reservado", "O" => "bg-ocupado", _ => "bg-secondary" };
+                    var (porcentaje, jsonAgenda) = CalcularProgresoYAgenda(sala, reservasHoy, horaActualTime);
+
+                    <div class="card-sala-movil">
+                        <div class="label-sala-movil">@sala.Nombre</div>
+                        <div class="flex-grow-1">
+                            <div class="sala-matriz-container @bgClase">
+                                <button type="button" class="sala-matriz-btn" data-bs-toggle="modal" data-bs-target="#modalReserva" data-sala-id="@sala.Id" data-sala-nombre="@sala.Nombre" data-sala-piso="@piso" data-agenda='@jsonAgenda'>
+                                    <span class="estado-letra">@sala.EstadoActual</span>
+                                    <span class="sala-sub-text">Box @sala.Id</span>
+                                </button>
+                                @if (porcentaje > 0) { <div class="sala-progress-bar" style="width: @porcentaje.ToString("0")%;"></div> }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+</div>
+
+<!-- Modal Compartido -->
+<div class="modal fade" id="modalReserva" tabindex="-1" aria-labelledby="modalReservaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-uta-fino modal-dialog-centered">
+        <div class="modal-content modal-content-uta">
+            <form asp-controller="Reservas" asp-action="CrearReserva" method="post">
+                <input type="hidden" name="salaId" id="hiddenSalaId" value="" />
+                <input type="hidden" name="usuarioId" value="1" />
+
+                <div class="modal-header modal-header-uta">
+                    <h6 class="modal-title" id="modalReservaLabel"><i class="fa-solid fa-bookmark me-2"></i>Asignación de Box</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.65rem;"></button>
+                </div>
+                
+                <div class="modal-body p-3">
+                    <div class="mb-3 text-center">
+                        <h5 id="modalInfoSala" class="fw-bold text-dark m-0" style="font-size: 0.95rem;">PISO X • SALA Y</h5>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between border-bottom mb-2 pb-2">
+                        <span class="fw-semibold text-dark" style="font-size: 0.78rem;">Hora de inicio:</span>
+                        <input type="time" name="horaInput" id="inputHoraInicio" class="form-control time-input-subtle text-center" required />
+                    </div>
+                    
+                    <div class="text-muted mb-3 text-center" style="font-size: 0.72rem;">
+                        ⚠️ El sistema asignará un máximo de <strong>2 horas seguidas</strong> o ajustará el término según topes de la agenda.
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="agenda-title d-block mb-1"><i class="fa-regular fa-clock me-1"></i> Horarios ocupados hoy:</span>
+                        <div id="contenedorAgenda" class="bg-light rounded border p-2" style="max-height: 80px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div class="action-row-container">
+                        <div class="action-row-top">
+                            <input class="form-check-input" type="checkbox" id="chkTerminos" required style="cursor: pointer; margin-top: 2px; flex-shrink: 0;">
+                            <label class="form-check-label text-muted fw-medium ms-2" for="chkTerminos" style="cursor: pointer; font-size: 0.72rem; line-height: 1.3;">
+                                Acepto cumplir el <a asp-controller="Home" asp-action="Reglamento" target="_blank" class="text-primary text-decoration-underline fw-semibold">Reglamento de Boxes</a>.
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-confirmar-block" id="btnConfirmarFinal" disabled>Confirmar Reserva</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private (double porcentaje, string json) CalcularProgresoYAgenda(SpottyUTA.Models.Sala sala, List<SpottyUTA.Models.Reserva> reservas, TimeOnly horaActual)
+    {
+        var reservaActiva = reservas.FirstOrDefault(r => r.SalaId == sala.Id && horaActual >= r.HoraInicio && horaActual < r.HoraFin);
+        double porcentaje = 0;
+        if (reservaActiva != null)
+        {
+            double total = (reservaActiva.HoraFin - reservaActiva.HoraInicio).TotalMinutes;
+            double pasados = (horaActual - reservaActiva.HoraInicio).TotalMinutes;
+            porcentaje = (pasados / total) * 100;
+        }
+        var agenda = reservas.Where(r => r.SalaId == sala.Id).Select(r => new { inicio = r.HoraInicio.ToString("HH:mm"), fin = r.HoraFin.ToString("HH:mm") });
+        return (porcentaje, System.Text.Json.JsonSerializer.Serialize(agenda));
+    }
+}
+
+@section Scripts {
+    <script>
+        function cambiarPisoMovil(pisoSeleccionado) {
+            document.querySelectorAll('.btn-piso-selector').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-piso-' + pisoSeleccionado).classList.add('active');
+
+            document.querySelectorAll('.piso-movil-seccion').forEach(div => div.classList.add('d-none'));
+            document.getElementById('contenedor-piso-movil-' + pisoSeleccionado).classList.remove('d-none');
+        }
+
+        const modalReserva = document.getElementById('modalReserva');
+        const chkTerminos = document.getElementById('chkTerminos');
+        const btnConfirmarFinal = document.getElementById('btnConfirmarFinal');
+        const contenedorAgenda = document.getElementById('contenedorAgenda');
+
+        chkTerminos.addEventListener('change', () => { btnConfirmarFinal.disabled = !chkTerminos.checked; });
+        
+        if (modalReserva) {
+            modalReserva.addEventListener('show.bs.modal', event => {
+                const button = event.relatedTarget;
+                const salaId = button.getAttribute('data-sala-id');
+                const salaNombre = button.getAttribute('data-sala-nombre');
+                const salaPiso = button.getAttribute('data-sala-piso');
+                const agenda = JSON.parse(button.getAttribute('data-agenda') || '[]');
+                
+                document.getElementById('hiddenSalaId').value = salaId;
+                document.getElementById('modalInfoSala').textContent = `PISO ${salaPiso} • ${salaNombre.toUpperCase()}`;
+                
+                const ahora = new Date();
+                document.getElementById('inputHoraInicio').value = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+
+                contenedorAgenda.innerHTML = "";
+                if (agenda.length === 0) {
+                    contenedorAgenda.innerHTML = `<div class="text-muted py-1 text-center" style="font-size: 0.7rem; font-style: italic;">🟢 Libre todo el día</div>`;
+                } else {
+                    const flexContainer = document.createElement('div');
+                    flexContainer.className = "d-flex flex-wrap gap-1 justify-content-center";
+                    agenda.forEach(res => {
+                        const badge = document.createElement('span');
+                        badge.className = "badge border border-danger-subtle text-danger bg-danger-subtle fw-medium px-2 py-1";
+                        badge.style.fontSize = "0.7rem";
+                        badge.style.borderRadius = "3px";
+                        badge.innerHTML = `<i class="fa-regular fa-clock me-1"></i>${res.inicio} - ${res.fin}`;
+                        flexContainer.appendChild(badge);
+                    });
+                    contenedorAgenda.appendChild(flexContainer);
+                }
+
+                chkTerminos.checked = false;
+                btnConfirmarFinal.disabled = true;
+            });
+        }
+    </script>
+}

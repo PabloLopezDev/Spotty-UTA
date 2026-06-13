@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SpottyUTA")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0f49b956646adb15318b18459583f33b12e7126")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+90fa9a245e101e4e16272a5750e1026f61523c49")]
 [assembly: System.Reflection.AssemblyProductAttribute("SpottyUTA")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SpottyUTA")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
