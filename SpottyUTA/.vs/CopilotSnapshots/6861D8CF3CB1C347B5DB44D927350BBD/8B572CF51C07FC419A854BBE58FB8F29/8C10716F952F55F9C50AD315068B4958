@@ -1,0 +1,44 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SpottyUTA.Data;
+using System.Threading.Tasks;
+using System.Linq;
+
+namespace SpottyUTA.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class SalasApiController : ControllerBase
+    {
+        private readonly SpottyUtaContext _context;
+
+        public SalasApiController(SpottyUtaContext context)
+        {
+            _context = context;
+        }
+
+        // Endpoint para obtener el estado de todas las salas
+        [HttpGet("estados")]
+        public async Task<IActionResult> GetEstados()
+        {
+            var salas = await _context.Salas
+                .Select(s => new { s.Id, Estado = s.EstadoActual })
+                .ToListAsync();
+
+            return Ok(salas);
+        }
+
+        // Endpoint opcional para cambiar el estado de una sala
+        [HttpPost("{id}/cambiar-estado")]
+        public async Task<IActionResult> CambiarEstado(int id, [FromBody] string nuevoEstado)
+        {
+            var sala = await _context.Salas.FindAsync(id);
+            if (sala == null) return NotFound();
+
+            sala.EstadoActual = nuevoEstado;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, mensaje = "Estado actualizado en BD" });
+        }
+    }
+}

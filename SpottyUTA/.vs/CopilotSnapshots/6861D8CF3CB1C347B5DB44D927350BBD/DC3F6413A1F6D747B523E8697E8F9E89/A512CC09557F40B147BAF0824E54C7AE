@@ -1,0 +1,212 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SpottyUTA.Data;
+using SpottyUTA.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+namespace SpottyUTA.Controllers
+
+{
+
+    public class HomeController : Controller
+
+    {
+
+        private readonly SpottyUtaContext _context;
+
+
+
+        public HomeController(SpottyUtaContext context)
+
+        {
+
+            _context = context;
+
+        }
+
+
+
+        public async Task<IActionResult> Index()
+
+        {
+
+            DateTime ahoraDateTime = DateTime.Now;
+
+            DateOnly fechaActual = DateOnly.FromDateTime(ahoraDateTime);
+
+            TimeOnly horaActualTime = TimeOnly.FromDateTime(ahoraDateTime);
+
+
+
+            ViewBag.DiaSemana = ahoraDateTime.DayOfWeek;
+
+
+
+            // 1. Buscamos por "A" o "Activa" las reservas vigentes o futuras de hoy
+
+            var reservasHoy = await _context.Reservas
+
+            .Where(r => r.Fecha == fechaActual &&
+
+            r.HoraFin >= horaActualTime &&
+
+            (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
+
+            .OrderBy(r => r.HoraInicio)
+
+            .ToListAsync();
+
+
+
+            ViewBag.ReservasHoy = reservasHoy;
+
+
+
+            var querySalas = _context.Salas.AsQueryable();
+
+
+
+            if (ahoraDateTime.DayOfWeek == DayOfWeek.Sunday) return View(new List<Models.Sala>());
+
+            if (ahoraDateTime.DayOfWeek == DayOfWeek.Saturday) querySalas = querySalas.Where(s => s.Piso == 1);
+
+
+
+            var salas = await querySalas.OrderBy(s => s.Piso).ThenBy(s => s.Nombre).ToListAsync();
+
+
+
+            // 🚨 REGLA DE APERTURA Y CIERRE DE LA BIBLIOTECA (UTA)
+
+            //int horaCierre = (ahoraDateTime.DayOfWeek == DayOfWeek.Saturday) ? 13 : 21; // Sábado a las 13, Lun-Vie a las 21
+
+            //int horaApertura = 8; // Abre a las 08:00 AM
+
+
+
+            // Si la hora actual está fuera del rango comercial de atención
+
+            //bool bibliotecaCerrada = horaActualTime.Hour >= horaCierre || horaActualTime.Hour < horaApertura;
+            bool bibliotecaCerrada = false;
+
+
+            // 2. Cálculo de estados adaptativo en tiempo real
+
+            foreach (var sala in salas)
+
+            {
+
+                // CASO CRÍTICO: Si la biblioteca está cerrada, forzamos estado Inactiva ("I") y saltamos la sala
+
+                if (bibliotecaCerrada)
+
+                {
+
+                    sala.EstadoActual = "I";
+
+
+
+                    // FIX: Vaciamos las reservas vinculadas a esta sala en el modelo
+
+                    // para que la vista no intente dibujar barras de progreso fantasmas
+
+                    sala.Reservas = new List<Reserva>();
+
+
+
+                    continue;
+
+                }
+
+
+
+                // Si está abierta, calculamos su estado normal (D, R u O)
+
+                var reservasDeEstaSala = reservasHoy.Where(r => r.SalaId == sala.Id).ToList();
+
+
+
+                // Caso 1: ¿La hora actual está dentro de una reserva?
+
+                var reservaActual = reservasDeEstaSala.FirstOrDefault(r => horaActualTime >= r.HoraInicio && horaActualTime < r.HoraFin);
+
+
+
+                if (reservaActual != null)
+
+                {
+
+                    double minutosTranscurridos = (horaActualTime.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
+
+
+
+                    if (minutosTranscurridos <= 15)
+
+                    {
+
+                        sala.EstadoActual = "R"; // Estado naranjo de espera (tolerancia)
+
+                    }
+
+                    else
+
+                    {
+
+                        sala.EstadoActual = "O"; // Se consolidó como ocupado
+
+                    }
+
+                }
+
+                else
+
+                {
+
+                    // Caso 2: ¿Hay una reserva futura que empiece en menos de 20 minutos?
+
+                    bool proximaReservaCercana = reservasDeEstaSala.Any(r =>
+
+                    r.HoraInicio > horaActualTime &&
+
+                    (r.HoraInicio.ToTimeSpan() - horaActualTime.ToTimeSpan()).TotalMinutes <= 20);
+
+
+
+                    if (proximaReservaCercana)
+
+                    {
+
+                        sala.EstadoActual = "R";
+
+                    }
+
+                    else
+
+                    {
+
+                        sala.EstadoActual = "D"; // Totalmente libre
+
+                    }
+
+                }
+
+            }
+
+
+
+            return View(salas);
+
+        }
+
+
+
+        public IActionResult Privacy() => View();
+
+        public IActionResult Reglamento() => View();
+
+    }
+
+}
+

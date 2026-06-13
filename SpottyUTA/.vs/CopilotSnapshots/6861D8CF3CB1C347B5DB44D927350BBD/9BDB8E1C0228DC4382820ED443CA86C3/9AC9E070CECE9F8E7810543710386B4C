@@ -1,0 +1,98 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using SpottyUTA.Data;
+using SpottyUTA.Models;
+
+namespace SpottyUTA.Controllers
+{
+    public class ReservasController : Controller
+    {
+        private readonly SpottyUtaContext _context;
+
+        public ReservasController(SpottyUtaContext context)
+        {
+            _context = context;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearReserva(int salaId, int usuarioId, string horaInput)
+        {
+            // 1. Validar que la hora ingresada sea válida
+            if (!TimeOnly.TryParse(horaInput, out TimeOnly horaInicio))
+            {
+                TempData["ErrorMessage"] = "El formato de hora ingresado no es válido.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // 2. Máximo 2 horas de corrido
+            TimeOnly horaFinSugerida = horaInicio.AddHours(2);
+
+            // 3. Obtener la agenda de hoy
+            var fechaHoy = DateOnly.FromDateTime(DateTime.Now);
+            var reservasExistentes = await _context.Reservas
+                .Where(r => r.SalaId == salaId && r.Fecha == fechaHoy)
+                .OrderBy(r => r.HoraInicio)
+                .ToListAsync();
+
+            // 4. Algoritmo para evitar choques de horario
+            foreach (var reserva in reservasExistentes)
+            {
+                // Si la hora elegida ya está tomada dentro de otro bloque
+                if (horaInicio >= reserva.HoraInicio && horaInicio < reserva.HoraFin)
+                {
+                    TempData["ErrorMessage"] = $"El box ya se encuentra ocupado en ese horario ({reserva.HoraInicio:HH:mm} - {reserva.HoraFin:HH:mm}).";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Si hay una reserva más tarde que corta nuestro bloque antes de las 2 horas
+                if (reserva.HoraInicio > horaInicio && reserva.HoraInicio < horaFinSugerida)
+                {
+                    horaFinSugerida = reserva.HoraInicio;
+                }
+            }
+
+            // 5. Crear la entidad con los datos recibidos
+            var nuevaReserva = new Reserva
+            {
+                SalaId = salaId,
+                UsuarioId = usuarioId,
+                Fecha = fechaHoy,
+                HoraInicio = horaInicio,
+                HoraFin = horaFinSugerida,
+
+                // ASIGNAMOS EL ESTADO INICIAL OBLIGATORIO:
+                // Cámbialo por lo que use tu modelo (un string "A", "Activa", o un número si es int)
+                EstadoReserva = "A"
+            };
+
+            try
+            {
+                _context.Reservas.Add(nuevaReserva);
+
+                var sala = await _context.Salas.FindAsync(salaId);
+                if (sala != null)
+                {
+                    var ahora = TimeOnly.FromDateTime(DateTime.Now);
+                    if (ahora >= horaInicio && ahora < horaFinSugerida)
+                    {
+                        sala.EstadoActual = "O";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"¡Reserva confirmada! Bloque asignado: {horaInicio:HH:mm} hasta las {horaFinSugerida:HH:mm}.";
+            }
+            catch (Exception ex)
+            {
+                // Esto nos va a mostrar en la alerta roja el error real que tira Entity Framework
+                TempData["ErrorMessage"] = $"Error de BD: {ex.Message} -> {ex.InnerException?.Message}";
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+    }
+}

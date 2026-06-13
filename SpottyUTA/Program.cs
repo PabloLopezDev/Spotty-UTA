@@ -13,6 +13,9 @@ namespace SpottyUTA
             builder.Services.AddControllersWithViews();
             builder.Services.AddDbContext<SpottyUtaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddSignalR();
+            // Background broadcaster to push sala state periodically (catches DB edits and time-based expirations)
+            builder.Services.AddHostedService<SpottyUTA.Services.SalasStateBroadcaster>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -29,10 +32,12 @@ namespace SpottyUTA
             app.UseAuthorization();
 
             app.MapStaticAssets();
+            app.MapHub<SpottyUTA.Hubs.SalasHub>("/salasHub");
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
+
 
             app.Run();
         }

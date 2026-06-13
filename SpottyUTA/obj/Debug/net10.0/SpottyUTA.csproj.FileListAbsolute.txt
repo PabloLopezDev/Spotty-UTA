@@ -224,3 +224,5 @@ C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\refint\Sp
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\SpottyUTA.pdb
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\SpottyUTA.genruntimeconfig.cache
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\ref\SpottyUTA.dll
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\nje3kpqikm-{0}-xxevq2cdcx-xxevq2cdcx.gz
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\bmyaey7x90-{0}-y0ijw6igie-y0ijw6igie.gz
