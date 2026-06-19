@@ -2,7 +2,7 @@
 
 Spotty UTA es una plataforma web diseñada para optimizar y automatizar la administración y asignación de los boxes de estudio en la biblioteca de la Universidad de Tarapacá, sede Saucache. El sistema soluciona los problemas de ineficiencia de las solicitudes manuales tradicionales, proporcionando una matriz interactiva y reactiva en tiempo real.
 
-## 🚀 Características del Proyecto (Sprint 1)
+## Características del Proyecto (Sprint 1)
 
 ### 1. Interfaz de Usuario Adaptativa (UI/UX)
 * **Matriz de Control para Escritorio:** Grilla estructurada y optimizada que permite visualizar de un vistazo el estado de todos los boxes distribuidos por pisos.
