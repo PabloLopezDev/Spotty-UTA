@@ -1,0 +1,152 @@
+﻿/* --- Estilos Base --- */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+/* 🏢 NAVBAR FORMAL (Estilo Corporativo) */
+.uta-navbar {
+    background-color: #1D1D3B; /* Azul UTA */
+    padding: 0 24px;
+    height: 64px; /* Altura fija formal */
+    border-bottom: 3px solid #E6B325; /* Línea dorada */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Manda los elementos a las esquinas */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.uta-giant-text {
+    font-size: 7rem;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: rgba(255, 255, 255, 0.12); /* Blanco sutil semiopaco */
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    text-transform: uppercase;
+    line-height: 1;
+    user-select: none;
+}
+.uta-brand {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+    .uta-brand .divider {
+        color: rgba(255, 255, 255, 0.3);
+        margin: 0 8px;
+    }
+
+    .uta-brand .sede {
+        color: #E6B325;
+        font-weight: 400;
+    }
+
+/* Contenedor derecho para que el botón no se estire */
+.navbar-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.btn-login-nav {
+    background-color: #E6B325;
+    color: #1D1D3B;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    text-decoration: none;
+    transition: background 0.2s;
+    height: fit-content; /* Evita que se estire al alto del navbar */
+}
+
+    .btn-login-nav:hover {
+        background-color: #dca91f;
+        color: #1D1D3B;
+    }
+
+
+/* 🔐 PANTALLA LOGIN COMPLETA (Estilo Figma Split) */
+.login-split-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+
+/* Lado izquierdo: El formulario limpio */
+.login-sidebar {
+    width: 450px;
+    min-width: 400px;
+    padding: 60px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #ffffff;
+    box-sizing: border-box;
+}
+
+/* Lado derecho: Espacio limpio institucional (puedes ponerle un fondo o dejarlo plano) */
+.login-main-bg {
+    flex: 1;
+    background-color: #1D1D3B; /* Azul UTA */
+    display: flex;
+    align-items: center; /* Centrado Vertical */
+    justify-content: center; /* Centrado Horizontal */
+    position: relative;
+    box-sizing: border-box;
+}
+
+.login-logo-badge {
+    background-color: #E6B325;
+    color: #1D1D3B;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.form-control-uta {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    .form-control-uta:focus {
+        border-color: #1D1D3B;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(29, 29, 59, 0.1);
+    }
+
+.btn-uta-submit {
+    background-color: #1D1D3B;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .btn-uta-submit:hover {
+        background-color: #2b2b54;
+    }

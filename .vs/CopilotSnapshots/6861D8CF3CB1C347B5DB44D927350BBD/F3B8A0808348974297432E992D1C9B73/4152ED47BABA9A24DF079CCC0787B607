@@ -1,0 +1,223 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using SpottyUTA.Data;
+using SpottyUTA.Models;
+using Microsoft.AspNetCore.SignalR;
+using SpottyUTA.Hubs;
+using Microsoft.AspNetCore.SignalR; // 🚨 NUEVO
+using SpottyUTA.Hubs;              // 🚨 NUEVO (Asegúrate de que tu carpeta se llame Hubs)
+
+namespace SpottyUTA.Controllers
+{
+    public class ReservasController : Controller
+    {
+        private readonly SpottyUtaContext _context;
+        private readonly IHubContext<SalasHub> _hubContext; // 🚨 NUEVO: Contexto para manejar SignalR
+        private readonly ILogger<ReservasController> _logger;
+
+        // Modificamos el constructor para inyectar el Hub de salas
+        public ReservasController(SpottyUtaContext context, IHubContext<SalasHub> hubContext, ILogger<ReservasController> logger)
+        {
+            _context = context;
+            _hubContext = hubContext; // Guardamos la referencia
+            _logger = logger;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearReserva(int salaId, int usuarioId, string horaInput, bool chkTerminos = false)
+        {
+            // Validar aceptación de reglamento (checkbox enviado desde el formulario)
+            // Algunos navegadores/envíos pueden enviar múltiples valores con el mismo name (ej. hidden=false y checkbox=true).
+            var formValues = Request.Form["chkTerminos"];
+            bool chkTerminosResolved = chkTerminos;
+            try
+            {
+                if (formValues.Count > 0)
+                {
+                    // Resolver true si alguno de los valores representa aceptación
+                    chkTerminosResolved = formValues.Any(v => string.Equals(v, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(v, "on", StringComparison.OrdinalIgnoreCase));
+                }
+            }
+            catch { /* no bloquear en caso de lectura inesperada */ }
+
+            _logger?.LogInformation("CrearReserva: Request.Form chkTerminos raw values = {vals}; resolved = {resolved}", string.Join(",", formValues.ToArray()), chkTerminosResolved);
+
+            if (!chkTerminosResolved)
+            {
+                TempData["ErrorMessage"] = "Debes aceptar el Reglamento de Boxes para completar la reserva.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (!TimeOnly.TryParse(horaInput, out TimeOnly horaInicio))
+            {
+                TempData["ErrorMessage"] = "El formato de hora ingresado no es válido.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var ahora = DateTime.Now;
+            var fechaHoy = DateOnly.FromDateTime(ahora);
+
+            // Regla 6: adaptación de horario según el día
+            var diaSemana = ahora.DayOfWeek;
+            TimeOnly apertura = default;
+            TimeOnly cierre;
+
+            if (diaSemana == DayOfWeek.Sunday)
+            {
+                TempData["ErrorMessage"] = "La biblioteca está cerrada los domingos. No es posible registrar reservas.";
+                return RedirectToAction("Index", "Home");
+            }
+            else if (diaSemana == DayOfWeek.Saturday)
+            {
+                apertura = new TimeOnly(9, 0);
+                cierre = new TimeOnly(13, 0);
+
+                // Verificar que la sala sea del primer piso
+                var salaInfo = await _context.Salas.FindAsync(salaId);
+                if (salaInfo == null)
+                {
+                    TempData["ErrorMessage"] = "Sala no encontrada.";
+                    return RedirectToAction("Index", "Home");
+                }
+                if (salaInfo.Piso != 1)
+                {
+                    TempData["ErrorMessage"] = "En jornada de fin de semana solo están habilitados los boxes del 1° piso.";
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+            else
+            {
+                // Lunes a Viernes
+                apertura = new TimeOnly(8, 0);
+                cierre = new TimeOnly(21, 0);
+            }
+
+            // Regla 4: No permitir horas de inicio en el pasado (tolerancia 5 minutos)
+            var ahoraTimeOnly = TimeOnly.FromDateTime(ahora);
+            if (horaInicio < ahoraTimeOnly.AddMinutes(-5))
+            {
+                TempData["ErrorMessage"] = "No puedes reservar con una hora de inicio en el pasado.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Regla 5: Margen mínimo de 30 minutos antes del cierre
+            if (horaInicio >= cierre || horaInicio > cierre.AddMinutes(-30))
+            {
+                TempData["ErrorMessage"] = $"No es posible reservar con menos de 30 minutos disponibles antes del cierre (cierre: {cierre:HH:mm}).";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Max 2 horas por solicitud
+            TimeOnly horaFinSugerida = horaInicio.AddHours(2);
+            if (horaFinSugerida > cierre) horaFinSugerida = cierre;
+
+            var reservasExistentes = await _context.Reservas
+                .Where(r => r.SalaId == salaId && r.Fecha == fechaHoy && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
+                .OrderBy(r => r.HoraInicio)
+                .ToListAsync();
+
+            // Regla 3 & 2: Detectar solapamientos y recorte inteligente
+            // Si la hora de inicio cae dentro de una reserva existente => rechazo inmediato
+            var overlapAtStart = reservasExistentes.FirstOrDefault(r => horaInicio >= r.HoraInicio && horaInicio < r.HoraFin);
+            if (overlapAtStart != null)
+            {
+                TempData["ErrorMessage"] = $"El box ya se encuentra ocupado en ese horario ({overlapAtStart.HoraInicio:HH:mm} - {overlapAtStart.HoraFin:HH:mm}).";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Buscar la primer reserva futura que empiece después de la hora de inicio para recortar
+            var primeraReservaFutura = reservasExistentes.Where(r => r.HoraInicio > horaInicio).OrderBy(r => r.HoraInicio).FirstOrDefault();
+            if (primeraReservaFutura != null && primeraReservaFutura.HoraInicio < horaFinSugerida)
+            {
+                // Recortar para terminar exactamente al inicio de la siguiente reserva
+                horaFinSugerida = primeraReservaFutura.HoraInicio;
+            }
+
+            // Asegurar que tras el recorte quede al menos 30 minutos disponibles
+            var duracionMinutos = (horaFinSugerida.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
+            if (duracionMinutos < 30)
+            {
+                TempData["ErrorMessage"] = "El tiempo útil disponible es inferior al mínimo requerido de 30 minutos tras ajustes. Elige otro horario.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var nuevaReserva = new Reserva
+            {
+                SalaId = salaId,
+                UsuarioId = usuarioId,
+                Fecha = fechaHoy,
+                HoraInicio = horaInicio,
+                HoraFin = horaFinSugerida,
+                EstadoReserva = "A" // Sincronizado con la "A" que lee el Home
+            };
+
+            try
+            {
+                _context.Reservas.Add(nuevaReserva);
+                await _context.SaveChangesAsync();
+
+                // 🚨 ¡LA MAGIA EN TIEMPO REAL AQUÍ!
+                // Construimos payload con estados actuales para enviar por SignalR y evitar fetch extra
+                try
+                {
+                    var ahoraNotif = DateTime.Now;
+                    var fechaNotif = DateOnly.FromDateTime(ahoraNotif);
+                    var horaNotif = TimeOnly.FromDateTime(ahoraNotif);
+
+                    // Consistente con HomeController/SalasApiController: solo reservas vigentes/futuras y activas
+                    var reservasHoyNotif = await _context.Reservas
+                        .Where(r => r.Fecha == fechaNotif && r.HoraFin >= horaNotif && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
+                        .ToListAsync();
+
+                    var salasNotif = await _context.Salas.ToListAsync();
+                    var payload = new List<object>();
+
+                    foreach (var s in salasNotif)
+                    {
+                        string estado = "D";
+                        var reservasDeEstaSala = reservasHoyNotif.Where(r => r.SalaId == s.Id).ToList();
+                        var reservaActual = reservasDeEstaSala.FirstOrDefault(r => horaNotif >= r.HoraInicio && horaNotif < r.HoraFin);
+                        string inicioStr = null;
+                        string finStr = null;
+                        if (reservaActual != null)
+                        {
+                            double minutosTranscurridos = (horaNotif.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
+                            estado = minutosTranscurridos <= 15 ? "R" : "O";
+                            inicioStr = reservaActual.HoraInicio.ToString("HH:mm");
+                            finStr = reservaActual.HoraFin.ToString("HH:mm");
+                        }
+                        else
+                        {
+                            bool proximaReservaCercana = reservasDeEstaSala.Any(r => r.HoraInicio > horaNotif && (r.HoraInicio.ToTimeSpan() - horaNotif.ToTimeSpan()).TotalMinutes <= 20);
+                            estado = proximaReservaCercana ? "R" : "D";
+                        }
+
+                        payload.Add(new { Id = s.Id, Estado = estado, Inicio = inicioStr, Fin = finStr });
+                    }
+
+                    await _hubContext.Clients.All.SendAsync("ActualizarMatrizSalas", payload);
+                    _logger?.LogInformation("SignalR: payload enviado con {count} salas. Ej: {sample}", payload.Count, payload.Take(5).ToArray());
+                }
+                catch
+                {
+                    // No bloquear la operación si SignalR falla
+                    try { await _hubContext.Clients.All.SendAsync("ActualizarMatrizSalas"); } catch { }
+                    _logger?.LogWarning("SignalR: fallo enviando payload, se envió notificación vacía.");
+                }
+
+                TempData["MostrarModalExito"] = true;
+                TempData["BloqueAsignado"] = $"{horaInicio:HH:mm} - {horaFinSugerida:HH:mm}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error de BD: {ex.Message}";
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+    }
+}

@@ -67,7 +67,7 @@ namespace SpottyUTA.Controllers
             // Traer todas las salas y determinaciones de jornada
             var salas = await _context.Salas.OrderBy(s => s.Piso).ThenBy(s => s.Nombre).ToListAsync();
 
-            // 🚨 REGLA DE APERTURA Y CIERRE DE LA BIBLIOTECA (UTA)
+            // REGLA DE APERTURA Y CIERRE DE LA BIBLIOTECA (UTA)
             // Lunes-Viernes: 08:00 - 21:00
             // Sábado: 09:00 - 13:00 (solo 1er piso habilitado)
             // Domingo: cerrado (todas inactivas)

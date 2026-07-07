@@ -1,0 +1,186 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesión - Spotty UTA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+            html, body, .container, .container-fluid, main, #main-container {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+                background-color: #1D1D3B !important;
+                font-family: 'Inter', sans-serif;
+            }
+
+            .login-fixed-wrapper {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: radial-gradient(circle, #25254d 0%, #1D1D3B 100%) !important;
+                z-index: 99999 !important;
+            }
+
+            /* 📦 TARJETA CON AIRE BALANCEADO */
+            .card-login-premium {
+                background: #ffffff !important;
+                border-radius: 20px !important;
+                padding: 50px 45px !important;
+                width: 460px !important; /* Ancho fijo para evitar que se deforme */
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                text-align: left !important; /* Alineación base limpia */
+            }
+
+            /* CONTENEDOR DE CAMPOS CON SEPARACIONES REALES */
+            .form-block-item {
+                display: block !important;
+                margin-bottom: 24px !important; /* Espacio real entre bloques hacia abajo */
+            }
+
+            .login-logo-badge {
+                background-color: #E6B325;
+                color: #1D1D3B;
+                font-weight: 800;
+                font-size: 0.72rem;
+                padding: 6px 14px;
+                border-radius: 6px;
+                letter-spacing: 1.2px;
+                display: inline-block;
+            }
+
+            .input-group-uta {
+                position: relative;
+                display: flex;
+                align-items: center;
+                width: 100% !important;
+            }
+
+            .input-icon {
+                position: absolute;
+                left: 15px;
+                color: #a0aec0;
+                font-size: 1rem;
+                z-index: 5;
+            }
+
+            .form-control-uta {
+                border: 1.5px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 14px 14px 14px 45px !important;
+                font-size: 0.95rem;
+                font-weight: 500;
+                color: #1a202c;
+                background-color: #f8fafc;
+                transition: all 0.2s ease-in-out;
+                width: 100% !important;
+            }
+
+                .form-control-uta:focus {
+                    border-color: #1D1D3B;
+                    background-color: #ffffff;
+                    box-shadow: 0 0 0 4px rgba(29, 29, 59, 0.15);
+                    outline: none;
+                }
+
+            /* ℹ️ BURBUJA DE PERMITIDOS ESTILIZADA Y CON ESPACIADO */
+            .burbuja-permisos {
+                background-color: #f1f5f9 !important;
+                border-radius: 8px !important;
+                padding: 12px 16px !important;
+                font-size: 0.75rem !important;
+                line-height: 1.5 !important;
+                color: #64748b !important;
+                margin-top: 12px !important;
+                margin-bottom: 32px !important; /* Gran separación antes del botón */
+                display: block !important;
+            }
+
+            .btn-uta-premium {
+                background: linear-gradient(135deg, #E6B325 0%, #dca91f 100%);
+                color: #1D1D3B !important;
+                font-weight: 700;
+                font-size: 0.92rem;
+                letter-spacing: 0.5px;
+                border: none !important;
+                padding: 14px !important;
+                border-radius: 10px !important;
+                box-shadow: 0 4px 12px rgba(230, 179, 37, 0.3);
+                transition: all 0.2s ease;
+                cursor: pointer;
+                width: 100% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+                .btn-uta-premium:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 15px rgba(230, 179, 37, 0.4);
+                }
+    </style>
+</head>
+<body>
+
+    <div class="login-fixed-wrapper">
+
+        <div class="card-login-premium">
+
+            <div class="form-block-item text-center">
+                <span class="login-logo-badge">SPOTTY UTA</span>
+            </div>
+
+            <div class="form-block-item text-center" style="margin-bottom: 35px !important;">
+                <h3 class="fw-bold text-dark mb-1" style="letter-spacing: -0.8px; font-size: 1.65rem;">Biblioteca UTA</h3>
+                <p class="text-muted small m-0" style="font-size: 0.85rem;">Módulo de Gestión y Reserva de Boxes</p>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger small d-flex align-items-center mb-4 gap-2 border-0 p-3 text-start" style="background-color: #fff5f5; color: #c53030; border-radius: 10px; font-weight: 500;">
+                    <i class="fa-solid fa-circle-xmark" style="font-size: 1.1rem;"></i>
+                    <span>@TempData["ErrorMessage"]</span>
+                </div>
+            }
+
+            <form asp-controller="Auth" asp-action="IniciarSesion" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-block-item">
+                    <label class="form-label small fw-bold text-secondary mb-2" style="font-size: 0.78rem; letter-spacing: 0.3px; text-transform: uppercase;">Correo Institucional:</label>
+                    <div class="input-group-uta">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" name="correo" class="form-control form-control-uta" placeholder="nombre@@alumnos.uta.cl" required autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="burbuja-permisos text-center">
+                    <i class="fa-solid fa-circle-info me-1" style="color: #3b82f6;"></i>
+                    Permitido: <span class="fw-bold text-dark">@@alumnos.uta.cl</span> o <span class="fw-bold text-dark">@@gestion.uta.cl</span>
+                </div>
+
+                <button type="submit" class="btn btn-uta-premium gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> INGRESAR AL PANEL
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
