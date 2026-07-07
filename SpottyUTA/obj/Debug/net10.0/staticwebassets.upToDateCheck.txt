@@ -1,3 +1,5 @@
+wwwroot\css\auth-layout.css
+wwwroot\css\panel-salas.css
 wwwroot\css\site.css
 wwwroot\favicon.ico
 wwwroot\js\site.js
@@ -61,8 +63,9 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
-wwwroot\css\panel-salas.css
 wwwroot\js\panel-salas.js
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\css\auth-layout.css
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\css\panel-salas.css
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\css\site.css
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\favicon.ico
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\js\site.js
@@ -125,5 +128,4 @@ C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\lib\jquery\dist\jqu
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\lib\jquery\dist\jquery.slim.min.js
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\lib\jquery\dist\jquery.slim.min.map
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\lib\jquery\LICENSE.txt
-C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\css\panel-salas.css
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\wwwroot\js\panel-salas.js

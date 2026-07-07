@@ -1,11 +1,71 @@
 // panel-salas.js
 // Mueve aquí la lógica de actualización en vivo y manejo del modal.
 
-// 📡 CONEXIÓN EN TIEMPO REAL CON SIGNALR
+// Conexión en tiempo real con SignalR
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/salasHub")
     .withAutomaticReconnect()
     .build();
+
+function parseAgendaSala(elemento) {
+    try {
+        return JSON.parse(elemento?.getAttribute('data-agenda') || '[]') || [];
+    } catch {
+        return [];
+    }
+}
+
+function obtenerTextoTemporizadorDesdeAgenda(agenda) {
+    if (!Array.isArray(agenda) || agenda.length === 0) return null;
+
+    const ahora = new Date();
+    const segundosActuales = ahora.getHours() * 3600 + ahora.getMinutes() * 60 + ahora.getSeconds();
+
+    const normalizar = (valor) => {
+        const m = String(valor || '').match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return null;
+        return (parseInt(m[1], 10) * 3600) + (parseInt(m[2], 10) * 60) + parseInt(m[3] || '0', 10);
+    };
+
+    const reservas = agenda
+        .map(r => ({ inicio: normalizar(r.inicio), fin: normalizar(r.fin) }))
+        .filter(r => r.inicio !== null && r.fin !== null)
+        .sort((a, b) => a.inicio - b.inicio);
+
+    const reservaActual = reservas.find(r => segundosActuales >= r.inicio && segundosActuales < r.fin);
+    if (reservaActual) {
+        const dif = Math.max(0, reservaActual.fin - segundosActuales);
+        return formatearTiempoRestante(dif);
+    }
+
+    return null;
+}
+
+function actualizarTextoTemporalSala(cont) {
+    if (!cont) return;
+
+    const button = cont.querySelector('.sala-matriz-btn');
+    const texto = cont.querySelector('.sala-sub-text');
+    if (!button || !texto) return;
+
+    const agenda = parseAgendaSala(button);
+    const timer = obtenerTextoTemporizadorDesdeAgenda(agenda);
+    const labelOriginal = texto.dataset.boxLabel || texto.textContent;
+
+    if (timer) texto.textContent = timer;
+    else texto.textContent = labelOriginal;
+}
+
+function refrescarTodosLosTemporizadores() {
+    document.querySelectorAll('.sala-matriz-container').forEach(actualizarTextoTemporalSala);
+}
+
+function formatearTiempoRestante(totalSegundos) {
+    const horas = Math.floor(totalSegundos / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
+    return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+}
 
 // Función que consulta la API y actualiza el DOM sin recargar
 async function actualizarSalasDesdeBD() {
@@ -70,6 +130,8 @@ function aplicarPayloadEstados(payload) {
                 if (estado.length === 1) letra.textContent = estado.toUpperCase();
                 else letra.textContent = (estado.charAt(0) || '').toUpperCase();
             }
+
+            actualizarTextoTemporalSala(cont);
         });
     } catch (err) {
         console.error('Error aplicando payload de SignalR:', err);
@@ -77,7 +139,7 @@ function aplicarPayloadEstados(payload) {
 }
 
 connection.on("ActualizarMatrizSalas", (payload) => {
-    console.log("⚡ SignalR: Cambio detectado en la DB.", payload ? 'payload recibido' : 'sin payload');
+    console.log("SignalR: Cambio detectado en la DB.", payload ? 'payload recibido' : 'sin payload');
     if (payload && Array.isArray(payload) && payload.length > 0) {
         aplicarPayloadEstados(payload);
     } else {
@@ -87,14 +149,16 @@ connection.on("ActualizarMatrizSalas", (payload) => {
 
 connection.start()
     .then(() => {
-        console.log("Conectado exitosamente a SignalR en vivo 🚀");
+        console.log("Conectado exitosamente a SignalR en vivo ");
         actualizarSalasDesdeBD();
+        refrescarTodosLosTemporizadores();
     })
     .catch(err => console.error("Error crítico de conexión SignalR: ", err));
 
 connection.onreconnected(() => {
     console.log('SignalR reconectado, solicitando estado actual...');
     actualizarSalasDesdeBD();
+    refrescarTodosLosTemporizadores();
 });
 
 connection.onclose(() => {
@@ -103,9 +167,14 @@ connection.onclose(() => {
 
 // Fallback periódico: solicitar estado fresco cada 15s para cubrir cambios por tiempo o ediciones directas en BD
 setInterval(() => {
-    console.log('🔄 Sincronizando grilla con la Base de Datos (fetch periódico)...');
+    console.log('Sincronizando grilla con la Base de Datos (fetch periódico)...');
     actualizarSalasDesdeBD();
 }, 15000);
+
+// Actualizar temporizadores cada segundo
+setInterval(() => {
+    refrescarTodosLosTemporizadores();
+}, 1000);
 
 // El control de aceptación se hará solo dentro del modal; no hay checkbox global
 // Asegurar que el botón Confirmar en el modal se habilite solo cuando se marque el checkbox interno
@@ -120,7 +189,32 @@ if (modalEl) {
         }
     });
 }
+const modalGestionAdmin = document.getElementById('modalGestionAdmin');
+if (modalGestionAdmin) {
+    modalGestionAdmin.addEventListener('show.bs.modal', event => {
+        const button = event.relatedTarget;
+        const salaId = button.getAttribute('data-sala-id');
+        const salaNombre = button.getAttribute('data-sala-nombre');
+        const salaEstado = button.getAttribute('data-sala-estado');
 
+        document.getElementById('adminSalaId').value = salaId;
+        document.getElementById('adminInfoBox').textContent = salaNombre.toUpperCase();
+
+        const badge = document.getElementById('adminEstadoBadge');
+        badge.className = "badge mt-1 px-3 py-1 text-white";
+
+        if (salaEstado === 'R') {
+            badge.textContent = "RESERVADO (ESPERANDO ALUMNO)";
+            badge.style.backgroundColor = "#ff9f1c";
+        } else if (salaEstado === 'O') {
+            badge.textContent = "OCUPADO (EN USO)";
+            badge.style.backgroundColor = "#dc3545";
+        } else {
+            badge.textContent = "DISPONIBLE";
+            badge.style.backgroundColor = "#28a745";
+        }
+    });
+}
 // --- LÓGICA DE INTERFAZ ORIGINAL ---
 function cambiarPisoMovil(pisoSeleccionado) {
     document.querySelectorAll('.btn-piso-selector').forEach(b => b.classList.remove('active'));
@@ -161,7 +255,7 @@ if (modalReserva) {
 
         contenedorAgenda.innerHTML = "";
         if (agendaSalaActual.length === 0) {
-            contenedorAgenda.innerHTML = `<div class="text-muted py-1 text-center" style="font-size: 0.7rem; font-style: italic;">🟢 Libre todo el día</div>`;
+            contenedorAgenda.innerHTML = `<div class="text-muted py-1 text-center" style="font-size: 0.7rem; font-style: italic;">Libre todo el día</div>`.trim();
         } else {
             const flexContainer = document.createElement('div');
             flexContainer.className = "d-flex flex-wrap gap-1 justify-content-center";
@@ -183,6 +277,10 @@ if (modalReserva) {
     });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    refrescarTodosLosTemporizadores();
+});
+
 function calcularTopeHorarioEnVivo() {
     if (!inputHoraInicio || !inputHoraInicio.value) return;
 
@@ -190,19 +288,25 @@ function calcularTopeHorarioEnVivo() {
     const alertBox = avisoTiempoRecortado.querySelector('.alert');
     alertBox.style.backgroundColor = "#fff3cd";
     alertBox.style.color = "#664d03";
+    alertBox.querySelector('i').className = "fa-solid fa-triangle-exclamation text-warning";
     btnConfirmarFinal.disabled = !chkTerminos.checked;
 
     let horaLimpia = inputHoraInicio.value.trim();
+    // Extraer solo los números HH:MM ignorando temporalmente el texto extra
     const coincidencia = horaLimpia.match(/^(\d{1,2}):(\d{2})/);
     if (!coincidencia) return;
 
     let horas = parseInt(coincidencia[1], 10);
     let minutos = parseInt(coincidencia[2], 10);
 
-    if (horaLimpia.toLowerCase().includes('p. m.') || horaLimpia.toLowerCase().includes('pm')) {
-        if (horas < 12) horas += 12;
-    } else if (horaLimpia.toLowerCase().includes('a. m.') || horaLimpia.toLowerCase().includes('am')) {
-        if (horas === 12) horas = 0;
+    // Convertir correctamente el formato de 12 horas a 24 horas militar
+    const esPM = horaLimpia.toLowerCase().includes('p. m.') || horaLimpia.toLowerCase().includes('pm');
+    const esAM = horaLimpia.toLowerCase().includes('a. m.') || horaLimpia.toLowerCase().includes('am');
+
+    if (esPM && horas < 12) {
+        horas += 12;
+    } else if (esAM && horas === 12) {
+        horas = 0;
     }
 
     const minutosInicio = horas * 60 + minutos;
@@ -211,6 +315,7 @@ function calcularTopeHorarioEnVivo() {
     const ahoraDate = new Date();
     const minutosActuales = ahoraDate.getHours() * 60 + ahoraDate.getMinutes();
 
+    // 1. CONTROL CRÍTICO: Bloqueo en tiempo pasado
     if (minutosInicio < minutosActuales - 5) {
         alertBox.style.backgroundColor = "#f8d7da";
         alertBox.style.color = "#842029";
@@ -218,22 +323,23 @@ function calcularTopeHorarioEnVivo() {
 
         textoAvisoTiempo.innerHTML = `<strong>Hora inválida:</strong> No puedes reservar bloques en el pasado. Escoge la hora actual o un bloque futuro de hoy.`;
         avisoTiempoRecortado.classList.remove('d-none');
-
         btnConfirmarFinal.disabled = true;
         return;
     }
 
+    // Configuración del horario institucional Saucache
     const diaSemanaActual = ahoraDate.getDay();
-    let minutosCierreUni = 21 * 60;
+    let minutosCierreUni = 21 * 60; // 21:00
     let horaCierreTexto = "21:00";
 
-    if (diaSemanaActual === 6) {
-        minutosCierreUni = 13 * 60;
+    if (diaSemanaActual === 6) { // Sábado
+        minutosCierreUni = 13 * 60; // 13:00
         horaCierreTexto = "13:00";
     }
 
     const margenMinimoReserva = 30;
 
+    // 2. CONTROL CRÍTICO: Cierre de biblioteca o tiempo insuficiente
     if (minutosInicio >= (minutosCierreUni - margenMinimoReserva)) {
         alertBox.style.backgroundColor = "#f8d7da";
         alertBox.style.color = "#842029";
@@ -250,28 +356,31 @@ function calcularTopeHorarioEnVivo() {
         return;
     }
 
-    let proximaReservaInicioMinutos = null;
-    let horaFinRealTexto = "";
+    // Parsear agenda de reservas a minutos enteros
+    const reservasOrdenadas = agendaSalaActual
+        .map(res => {
+            const partesInicio = String(res.inicio || '').split(':').map(Number);
+            const partesFin = String(res.fin || '').split(':').map(Number);
+
+            if (partesInicio.length < 2 || partesFin.length < 2) return null;
+            return {
+                inicioMinutos: partesInicio[0] * 60 + partesInicio[1],
+                finMinutos: partesFin[0] * 60 + partesFin[1],
+                inicioTexto: res.inicio,
+                finTexto: res.fin
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.inicioMinutos - b.inicioMinutos);
+
+    // 3. CONTROL CRÍTICO: Choque directo de horarios
     let estaOcupadoDirecto = false;
     let bloqueChocanteTexto = "";
 
-    agendaSalaActual.forEach(res => {
-        const [rHorasInicio, rMinutosInicio] = res.inicio.split(':').map(Number);
-        const [rHorasFin, rMinutosFin] = res.fin.split(':').map(Number);
-
-        const rInicioMinutos = rHorasInicio * 60 + rMinutosInicio;
-        const rFinMinutos = rHorasFin * 60 + rFinMinutos;
-
-        if (minutosInicio >= rInicioMinutos && minutosInicio < rFinMinutos) {
+    reservasOrdenadas.forEach(res => {
+        if (minutosInicio >= res.inicioMinutos && minutosInicio < res.finMinutos) {
             estaOcupadoDirecto = true;
-            bloqueChocanteTexto = `${res.inicio} - ${res.fin}`;
-        }
-
-        if (rInicioMinutos > minutosInicio && rInicioMinutos < minutosFinSugerido) {
-            if (proximaReservaInicioMinutos === null || rInicioMinutos < proximaReservaInicioMinutos) {
-                proximaReservaInicioMinutos = rInicioMinutos;
-                horaFinRealTexto = res.inicio;
-            }
+            bloqueChocanteTexto = `${res.inicioTexto} - ${res.finTexto}`;
         }
     });
 
@@ -282,13 +391,31 @@ function calcularTopeHorarioEnVivo() {
 
         textoAvisoTiempo.innerHTML = `<strong>No disponible:</strong> El box ya está ocupado en el horario seleccionado (Bloque: <strong>${bloqueChocanteTexto} hrs</strong>).`;
         avisoTiempoRecortado.classList.remove('d-none');
-
         btnConfirmarFinal.disabled = true;
         return;
     }
 
-    if (minutosFinSugerido > minutosCierreUni && minutosInicio < (minutosCierreUni - margenMinimoReserva)) {
-        alertBox.querySelector('i').className = "fa-solid fa-triangle-exclamation text-warning";
+    // 4. ADVERTENCIA: Recorte por reserva posterior (Aviso Amarillo)
+    const proximaReserva = reservasOrdenadas.find(res => res.inicioMinutos > minutosInicio);
+    if (proximaReserva) {
+        const minutosDisponibles = proximaReserva.inicioMinutos - minutosInicio;
+
+        if (minutosDisponibles < 120) {
+            const horasDisponibles = Math.floor(minutosDisponibles / 60);
+            const minsRestantes = minutosDisponibles % 60;
+            const textoTiempo = horasDisponibles > 0
+                ? `${horasDisponibles} ${horasDisponibles === 1 ? 'hora' : 'horas'}${minsRestantes > 0 ? ` y ${minsRestantes} min` : ''}`
+                : `${minsRestantes} minutos`;
+
+            textoAvisoTiempo.innerHTML = `<strong>Aviso:</strong> Solo dispones de <strong>${textoTiempo}</strong> de uso. Tu bloque terminará a las <strong>${proximaReserva.inicioTexto} hrs</strong> por una reserva posterior.`;
+            avisoTiempoRecortado.classList.remove('d-none');
+            btnConfirmarFinal.disabled = !chkTerminos.checked;
+            return;
+        }
+    }
+
+    // 5. ADVERTENCIA: Recorte por hora de cierre institucional (Aviso Amarillo)
+    if (minutosFinSugerido > minutosCierreUni) {
         const minsDisponiblesCierre = minutosCierreUni - minutosInicio;
         const horasDisponiblesCierre = Math.floor(minsDisponiblesCierre / 60);
         const minsRestantesCierre = minsDisponiblesCierre % 60;
@@ -297,24 +424,10 @@ function calcularTopeHorarioEnVivo() {
 
         textoAvisoTiempo.innerHTML = `<strong>Aviso de Cierre:</strong> Tu bloque se recortará a <strong>${textoCierre}</strong> de uso porque la biblioteca cierra a las <strong>${horaCierreTexto} hrs</strong>.`;
         avisoTiempoRecortado.classList.remove('d-none');
+        btnConfirmarFinal.disabled = !chkTerminos.checked;
         return;
     }
 
-    if (proximaReservaInicioMinutos !== null) {
-        alertBox.querySelector('i').className = "fa-solid fa-triangle-exclamation text-warning";
-
-        const minutesDisponibles = proximaReservaInicioMinutos - minutosInicio;
-        const horasDisponibles = Math.floor(minutesDisponibles / 60);
-        const minsRestantes = minutesDisponibles % 60;
-
-        let textoTiempo = "";
-        if (horasDisponibles > 0) {
-            textoTiempo = `${horasDisponibles} ${horasDisponibles === 1 ? 'hora' : 'horas'}${minsRestantes > 0 ? ` y ${minsRestantes} min` : ''}`;
-        } else {
-            textoTiempo = `${minsRestantes} minutos`;
-        }
-
-        textoAvisoTiempo.innerHTML = `<strong>Aviso:</strong> Solo dispones de <strong>${textoTiempo}</strong> de uso. Tu bloque terminará a las <strong>${horaFinRealTexto} hrs</strong> por un compromiso posterior.`;
-        avisoTiempoRecortado.classList.remove('d-none');
-    }
+    // Si no entra en ninguna restricción, el estado del botón depende únicamente de los términos
+    btnConfirmarFinal.disabled = !chkTerminos.checked;
 }

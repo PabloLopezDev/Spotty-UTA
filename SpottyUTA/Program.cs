@@ -16,6 +16,14 @@ namespace SpottyUTA
             builder.Services.AddSignalR();
             // Background broadcaster to push sala state periodically (catches DB edits and time-based expirations)
             builder.Services.AddHostedService<SpottyUTA.Services.SalasStateBroadcaster>();
+            // Añadir servicios de sesión
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // La sesión expira en 30 min de inactividad
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -25,7 +33,7 @@ namespace SpottyUTA
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-
+            app.UseSession();
             app.UseHttpsRedirection();
             app.UseRouting();
 

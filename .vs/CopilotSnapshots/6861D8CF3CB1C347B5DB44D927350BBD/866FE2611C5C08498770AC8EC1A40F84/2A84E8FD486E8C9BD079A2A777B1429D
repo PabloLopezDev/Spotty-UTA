@@ -1,0 +1,240 @@
+﻿@model IEnumerable<SpottyUTA.Models.Sala>
+
+@{
+    ViewData["Title"] = "Panel de Salas - Spotty UTA";
+    var reservasHoy = ViewBag.ReservasHoy as List<SpottyUTA.Models.Reserva> ?? new List<SpottyUTA.Models.Reserva>();
+    var horaActualTime = TimeOnly.FromDateTime(DateTime.Now);
+    var nombresSalas = Model.Select(s => s.Nombre).Distinct().OrderBy(n => n).ToList();
+}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="~/css/panel-salas.css" />
+
+<div class="w-100 uta-navbar d-flex align-items-center justify-content-between mb-3 shadow-sm">
+    <div class="d-flex align-items-center gap-2">
+        <span class="uta-logo-badge">UTA</span>
+        <span class="fw-semibold small" style="font-size: 0.8rem; letter-spacing: 0.3px;">SPOTTY UTA <span class="fw-normal opacity-50">| Saucache</span></span>
+    </div>
+
+@if (TempData["MostrarModalExito"] != null)
+{
+    <div class="modal fade" id="modalExitoReserva" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 360px; margin: 10px auto;">
+            <div class="modal-content border-0 text-center shadow-lg" style="border-radius: 12px;">
+                <div class="modal-body p-4">
+                    <div class="text-success mb-3" style="font-size: 3.5rem;">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">¡Reserva Exitosa!</h5>
+                    <p class="text-muted small mb-3">
+                        Tu asignación para el bloque <strong class="text-dark">@TempData["BloqueAsignado"]</strong> se ha registrado correctamente.
+                    </p>
+
+                    <div class="alert alert-warning d-flex align-items-center mb-3 gap-2 border-0 px-3 py-2 text-start" style="background-color: #fffdec; color: #534300; border-radius: 6px; font-size: 0.78rem;">
+                        <i class="fa-solid fa-clock text-warning" style="font-size: 1.1rem;"></i>
+                        <span><strong>IMPORTANTE:</strong> Tienes <strong>15 minutos</strong> para presentarte en el mesón de la biblioteca o el box se liberará de forma automática.</span>
+                    </div>
+
+                    <button type="button" class="btn w-100 fw-semibold text-white" data-bs-dismiss="modal" style="background-color: #1D1D3B; font-size: 0.85rem; padding: 10px; border-radius: 6px;">
+                        ENTENDIDO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+    <button type="button" class="menu-icon-btn">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</div>
+
+<div class="container-fluid" style="max-width: 1150px; margin: 0 auto; padding: 0 15px;">
+
+    
+    <!-- Simulador eliminado: ahora usamos tiempo real desde el servidor y SignalR para sincronizar -->
+
+    @if ((DayOfWeek)ViewBag.DiaSemana == DayOfWeek.Sunday)
+    {
+        <div class="alert alert-danger small fw-semibold mb-3 border-0 py-2 text-center shadow-sm">
+            🚨 LA BIBLIOTECA PERMANECE COMPLETAMENTE CERRADA LOS DOMINGOS.
+        </div>
+    }
+    else if ((DayOfWeek)ViewBag.DiaSemana == DayOfWeek.Saturday)
+    {
+        <div class="alert alert-jornada fw-medium mb-3 p-3 shadow-sm" role="alert" style="margin: 0;">
+            <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> <strong>JORNADA DE FIN DE SEMANA (09:00 a 13:00 hrs):</strong> Solo sectores del 1° Piso habilitados.
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success small fw-semibold my-3 border-0 py-2 shadow-sm" style="border-left: 4px solid #28a745 !important; margin: 15px 0 0 0;">✅ @TempData["SuccessMessage"]</div> }
+    @if (TempData["WarningMessage"] != null) { <div class="alert alert-warning small fw-semibold text-dark my-3 border-0 py-2 shadow-sm" style="border-left: 4px solid #ff9f1c !important; margin: 15px 0 0 0;">⚠️ @TempData["WarningMessage"]</div> }
+    @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger small fw-semibold my-3 border-0 py-2 shadow-sm" style="margin: 15px 0 0 0;">❌ @TempData["ErrorMessage"]</div> }
+
+    <div class="leyenda-container mb-3" style="max-width: 100%; margin: 15px 0;">
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #28a745;"></span> <span class="text-muted">Disponible</span></div>
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #ff9f1c;"></span> <span class="text-muted">Reservado</span></div>
+        <div class="leyenda-item"><span class="leyenda-cuadro" style="background-color: #dc3545;"></span> <span class="text-muted">Ocupado</span></div>
+    </div>
+
+    <div class="d-none d-md-block table-responsive matriz-contenedor-pc mb-4 rounded border bg-white p-4 shadow-sm" style="max-width: 100%;">
+        <table class="matriz-tabla">
+            <thead>
+                <tr>
+                    <th style="width: 80px;"></th>
+                    <th class="matriz-header-piso">Primer Piso</th>
+                    <th class="matriz-header-piso">Segundo Piso</th>
+                    <th class="matriz-header-piso">Tercer Piso</th>
+                    <th class="matriz-header-piso">Cuarto Piso</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var nombreSala in nombresSalas)
+                {
+                    <tr>
+                        <td class="matriz-label-sala text-center">@nombreSala</td>
+                        @for (int piso = 1; piso <= 4; piso++)
+                        {
+                            var sala = Model.FirstOrDefault(s => s.Nombre == nombreSala && s.Piso == piso);
+                            <td>
+                                @if (sala != null)
+                                {
+                                    string bgClase = sala.EstadoActual switch { "D" => "bg-disponible", "R" => "bg-reservado", "O" => "bg-ocupado", "I" => "bg-inactiva", _ => "bg-secondary" };
+                                    var (inicioRes, finRes, jsonAgenda) = ObtenerDatosAgenda(sala, reservasHoy, horaActualTime);
+                                    string esInactiva = (sala.EstadoActual == "I") ? "disabled" : "";
+
+                                    <div id="sala-@sala.Id" data-sala-id="@sala.Id" class="sala-matriz-container @bgClase">
+                                        <button type="button" class="sala-matriz-btn" data-bs-toggle="modal" data-bs-target="#modalReserva" data-sala-id="@sala.Id" data-sala-nombre="@sala.Nombre" data-sala-piso="@piso" data-agenda='@jsonAgenda' @esInactiva>
+                                            <span class="estado-letra">--</span>
+                                            <span class="sala-sub-text">@sala.Nombre</span>
+                                        </button>
+
+                                        @* Progress bar removed to simplify UI and avoid client-side timing issues *@
+                                    </div>
+                                }
+                                else { 
+                                    <div class="sala-matriz-container bg-light d-flex align-items-center justify-content-center rounded border">
+                                        <span class="text-muted fw-semibold" style="font-size: 0.78rem; letter-spacing: 0.3px;">Inactiva</span>
+                                    </div> 
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-block d-md-none mb-4">
+        <div class="row g-2 mb-3 text-center">
+            @for (int p = 1; p <= 4; p++)
+            {
+                <div class="col-3">
+                    <button type="button" class="btn w-100 btn-piso-selector @(p == 1 ? "active" : "")" id="btn-piso-@p" onclick="cambiarPisoMovil(@p)">
+                        @p
+                    </button>
+                </div>
+            }
+        </div>
+
+        @for (int piso = 1; piso <= 4; piso++)
+        {
+            <div id="contenedor-piso-movil-@piso" class="piso-movil-seccion d-flex flex-column gap-2 @(piso == 1 ? "" : "d-none")">
+                @foreach (var sala in Model.Where(s => s.Piso == piso).OrderBy(s => s.Nombre))
+                {
+                    string bgClase = sala.EstadoActual switch { "D" => "bg-disponible", "R" => "bg-reservado", "O" => "bg-ocupado", "I" => "bg-inactiva", _ => "bg-secondary" };
+                    var (inicioRes, finRes, jsonAgenda) = ObtenerDatosAgenda(sala, reservasHoy, horaActualTime);
+                    string esInactivaMovil = (sala.EstadoActual == "I") ? "disabled" : "";
+
+                    <div class="card-sala-movil">
+                        <div class="label-sala-movil">@sala.Nombre</div>
+                        <div class="flex-grow-1">
+                                <div id="sala-@sala.Id" data-sala-id="@sala.Id" class="sala-matriz-container @bgClase">
+                                    <button type="button" class="sala-matriz-btn" data-bs-toggle="modal" data-bs-target="#modalReserva" data-sala-id="@sala.Id" data-sala-nombre="@sala.Nombre" data-sala-piso="@piso" data-agenda='@jsonAgenda' @esInactivaMovil>
+                                        <span class="estado-letra">--</span>
+                                        <span class="sala-sub-text">@sala.Nombre</span>
+                                    </button>
+                                    <div class="sala-temporizador" style="display: none;"></div>
+                                    @* Progress bar removed to simplify UI and avoid client-side timing issues *@
+                                </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalReserva" tabindex="-1" aria-labelledby="modalReservaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-uta-fino modal-dialog-centered">
+        <div class="modal-content modal-content-uta">
+            <form asp-controller="Reservas" asp-action="CrearReserva" method="post">
+                <input type="hidden" name="salaId" id="hiddenSalaId" value="" />
+                <input type="hidden" name="usuarioId" value="1" />
+
+                <div class="modal-header modal-header-uta">
+                    <h6 class="modal-title" id="modalReservaLabel"><i class="fa-solid fa-bookmark me-2"></i>Asignación de Box</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.65rem;"></button>
+                </div>
+                
+                <div class="modal-body p-3">
+                    <div class="mb-3 text-center">
+                        <h5 id="modalInfoSala" class="fw-bold text-dark m-0" style="font-size: 0.95rem;">PISO X • SALA Y</h5>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between border-bottom mb-2 pb-2">
+                        <span class="fw-semibold text-dark" style="font-size: 0.78rem;">Hora de inicio:</span>
+                        <input type="time" name="horaInput" id="inputHoraInicio" class="form-control time-input-subtle text-center" required />
+                    </div>
+                    
+                    <div class="mb-3 p-2 text-center" style="background-color: #f1f3f9; color: #4e5366; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">
+                        <i class="fa-solid fa-circle-info text-primary me-1" style="font-size: 0.85rem; vertical-align: middle;"></i> 
+                        Las asignaciones son de hasta <strong>2 horas corridas</strong> 
+                    </div>
+
+                    <div id="avisoTiempoRecortado" class="d-none mb-3">
+                        <div class="alert d-flex align-items-center gap-2 border-0 px-3 py-2 text-start" style="background-color: #fff3cd; color: #664d03; border-radius: 6px; font-size: 0.75rem;">
+                            <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 1.1rem;"></i>
+                            <span id="textoAvisoTiempo"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="agenda-title d-block mb-1"><i class="fa-regular fa-clock me-1"></i> Horarios ocupados hoy:</span>
+                        <div id="contenedorAgenda" class="bg-light rounded border p-2" style="max-height: 80px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <div class="action-row-container">
+                        <div class="action-row-top">
+                            @* Hidden input para enviar false cuando el checkbox no está marcado. *@
+                            <input type="hidden" name="chkTerminos" value="false" />
+                            <input class="form-check-input" type="checkbox" id="chkTerminos" name="chkTerminos" value="true" required style="cursor: pointer; margin-top: 2px; flex-shrink: 0;">
+                            <label class="form-check-label text-muted fw-medium ms-2" for="chkTerminos" style="cursor: pointer; font-size: 0.72rem; line-height: 1.3;">
+                                Acepto cumplir el <a asp-controller="Home" asp-action="Reglamento" target="_blank" class="text-primary text-decoration-underline fw-semibold">Reglamento de Boxes</a>.
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-confirmar-block" id="btnConfirmarFinal" disabled>Confirmar Reserva</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private (string inicio, string fin, string json) ObtenerDatosAgenda(SpottyUTA.Models.Sala sala, List<SpottyUTA.Models.Reserva> reservas, TimeOnly horaActual)
+    {
+        var reservaActiva = reservas.FirstOrDefault(r => r.SalaId == sala.Id && horaActual >= r.HoraInicio && horaActual < r.HoraFin);
+        string inicioStr = reservaActiva != null ? reservaActiva.HoraInicio.ToString("HH:mm") : "";
+        string finStr = reservaActiva != null ? reservaActiva.HoraFin.ToString("HH:mm") : "";
+        
+        var agenda = reservas.Where(r => r.SalaId == sala.Id).Select(r => new { inicio = r.HoraInicio.ToString("HH:mm"), fin = r.HoraFin.ToString("HH:mm") });
+        return (inicioStr, finStr, System.Text.Json.JsonSerializer.Serialize(agenda));
+    }
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script src="~/js/panel-salas.js"></script>
+}
