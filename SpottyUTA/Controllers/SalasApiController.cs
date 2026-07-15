@@ -11,74 +11,21 @@ namespace SpottyUTA.Controllers
     public class SalasApiController : ControllerBase
     {
         private readonly SpottyUtaContext _context;
+        private readonly Services.ISalasService _salasService;
 
-        public SalasApiController(SpottyUtaContext context)
+        public SalasApiController(SpottyUtaContext context, Services.ISalasService salasService)
         {
             _context = context;
+            _salasService = salasService;
         }
 
-        // Endpoint para obtener el estado de todas las salas
         [HttpGet("estados")]
         public async Task<IActionResult> GetEstados()
         {
-            var ahora = DateTime.Now;
-            var fechaActual = DateOnly.FromDateTime(ahora);
-            var horaActual = TimeOnly.FromDateTime(ahora);
-
-            // Traer reservas de hoy que sigan vigentes o futuras (consistente con HomeController)
-            var reservasHoy = await _context.Reservas
-                .Where(r => r.Fecha == fechaActual && r.HoraFin >= horaActual && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
-                .ToListAsync();
-
-            // Traer salas
-            var salas = await _context.Salas.ToListAsync();
-
-            var resultado = new List<object>();
-
-            foreach (var sala in salas)
-            {
-                // Por defecto disponible
-                string estado = "D";
-
-                // Cuando biblioteca cerrada se podría marcar 'I' (inactiva) si aplica
-                bool bibliotecaCerrada = false; // mantener consistente con HomeController
-
-                if (bibliotecaCerrada)
-                {
-                    estado = "I";
-                }
-                else
-                {
-                    var reservasDeEstaSala = reservasHoy.Where(r => r.SalaId == sala.Id).ToList();
-
-                    var reservaActual = reservasDeEstaSala.FirstOrDefault(r => horaActual >= r.HoraInicio && horaActual < r.HoraFin);
-                    if (reservaActual != null)
-                    {
-                        double minutosTranscurridos = (horaActual.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
-                        if (minutosTranscurridos <= 15)
-                        {
-                            estado = "R";
-                        }
-                        else
-                        {
-                            estado = "O";
-                        }
-                    }
-                    else
-                    {
-                        bool proximaReservaCercana = reservasDeEstaSala.Any(r => r.HoraInicio > horaActual && (r.HoraInicio.ToTimeSpan() - horaActual.ToTimeSpan()).TotalMinutes <= 20);
-                        if (proximaReservaCercana) estado = "R";
-                        else estado = "D";
-                    }
-                }
-
-                resultado.Add(new { Id = sala.Id, Estado = estado });
-            }
-
+            var resultado = await _salasService.ObtenerPayloadEstadosSalasAsync();
             return Ok(resultado);
         }
 
-        // Endpoint opcional para cambiar el estado de una sala
         [HttpPost("{id}/cambiar-estado")]
         public async Task<IActionResult> CambiarEstado(int id, [FromBody] string nuevoEstado)
         {
@@ -87,6 +34,8 @@ namespace SpottyUTA.Controllers
 
             sala.EstadoActual = nuevoEstado;
             await _context.SaveChangesAsync();
+
+            await _salasService.BroadcastEstadosAsync();
 
             return Ok(new { success = true, mensaje = "Estado actualizado en BD" });
         }

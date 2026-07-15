@@ -1,12 +1,14 @@
 @{
     Layout = null;
+    var email = ViewBag.Email as string;
+    var rol = ViewBag.Rol as string;
 }
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Iniciar Sesión - Spotty UTA</title>
+    <title>Completar Registro - Spotty UTA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,12 +21,6 @@
         <div class="circle-dec circle-dec-1"></div>
         <div class="circle-dec circle-dec-2"></div>
         <div class="circle-dec circle-dec-3"></div>
-
-        <div class="dots-dec dots-dec-left"></div>
-        <div class="dots-dec dots-dec-right"></div>
-
-        <i class="fa-regular fa-book-open bg-icon bg-icon-left"></i>
-        <i class="fa-regular fa-graduation-cap bg-icon bg-icon-right"></i>
     </div>
 
     <div class="login-wrapper">
@@ -38,12 +34,21 @@
             </div>
         </div>
 
-        <!-- Login Card -->
+        <!-- Register Card -->
         <div class="card-login-figma">
             <span class="login-badge">Spotty UTA</span>
 
-            <h3 class="card-title">Biblioteca UTA</h3>
-            <p class="card-subtitle">Ingresa con tu credencial institucional</p>
+            <h3 class="card-title">Completar Perfil</h3>
+            <p class="card-subtitle">Parece que es tu primer ingreso con este correo. Indícanos tus datos para registrarte.</p>
+
+            <div class="bubble-info-register shadow-sm">
+                <div class="mb-1"><strong><i class="fa-regular fa-envelope me-1"></i> Correo:</strong> <span class="text-secondary">@email</span></div>
+                <div><strong><i class="fa-solid fa-user-tag me-1"></i> Rol Asignado:</strong> 
+                    <span class="badge @(rol == "Administrador" ? "bg-danger-subtle text-danger border border-danger-subtle" : "bg-primary-subtle text-primary border border-primary-subtle")" style="font-size: 0.7rem; font-weight: 600;">
+                        @(rol?.ToUpper() ?? "")
+                    </span>
+                </div>
+            </div>
 
             @if (TempData["ErrorMessage"] != null)
             {
@@ -53,38 +58,27 @@
                 </div>
             }
 
-            <form asp-controller="Auth" asp-action="IniciarSesion" method="post">
+            <form asp-controller="Auth" asp-action="CompletarRegistro" method="post">
                 @Html.AntiForgeryToken()
+                <input type="hidden" name="email" value="@email" />
+                <input type="hidden" name="rol" value="@rol" />
 
                 <div class="form-group-uta">
-                    <label class="form-label-uta">Correo Electrónico</label>
+                    <label class="form-label-uta">Nombre Completo</label>
                     <div class="input-container-uta">
-                        <i class="fa-regular fa-envelope input-icon-uta"></i>
-                        <input type="email" name="correo" class="form-control form-control-uta" placeholder="ejemplo@@alumnos.uta.cl" required autocomplete="off" />
-                    </div>
-                    <div class="info-helper-uta">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span>Permitido: @@alumnos.uta.cl, @@uta.cl o @@gestion.uta.cl</span>
+                        <i class="fa-regular fa-user input-icon-uta"></i>
+                        <input type="text" name="nombreCompleto" class="form-control form-control-uta" placeholder="Ej. Juan Pérez González" required autocomplete="off" autofocus />
                     </div>
                 </div>
 
                 <button type="submit" class="btn btn-acceder-figma">
-                    <i class="fa-solid fa-right-to-bracket"></i> Acceder al panel
+                    <i class="fa-solid fa-user-plus"></i> Completar y Acceder
                 </button>
+
+                <a asp-controller="Auth" asp-action="Login" class="btn-volver-login">
+                    Cancelar e ir al Login
+                </a>
             </form>
-
-            <div class="divider-container">
-                ¿Problemas para ingresar?
-            </div>
-
-            <div class="footer-links-row">
-                <a href="#" class="footer-link-item">
-                    <i class="fa-regular fa-circle-question"></i> Ayuda y soporte
-                </a>
-                <a href="#" class="footer-link-item">
-                    <i class="fa-solid fa-lock"></i> Recuperar acceso
-                </a>
-            </div>
         </div>
 
         <!-- Footer Copyright -->

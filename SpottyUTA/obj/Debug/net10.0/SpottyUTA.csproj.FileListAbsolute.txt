@@ -217,7 +217,6 @@ C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\staticweb
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\swae.build.ex.cache
-C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\SpottyUTA.csproj.Up2Date
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\SpottyUTA.dll
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\refint\SpottyUTA.dll
@@ -226,4 +225,6 @@ C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\SpottyUTA
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\ref\SpottyUTA.dll
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\nje3kpqikm-{0}-tuxcum7yzl-tuxcum7yzl.gz
 C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\383qz01adi-{0}-4e8ua45ker-4e8ua45ker.gz
-C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\bmyaey7x90-{0}-lvk0i4yovx-lvk0i4yovx.gz
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\1nagnnwyud-{0}-0pvumxl1qm-0pvumxl1qm.gz
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\compressed\bmyaey7x90-{0}-2ffybydme1-2ffybydme1.gz
+C:\Users\Pablo\Documents\GitHub\Spotty-UTA\SpottyUTA\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

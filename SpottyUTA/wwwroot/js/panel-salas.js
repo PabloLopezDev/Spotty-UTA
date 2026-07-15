@@ -197,7 +197,7 @@ if (modalGestionAdmin) {
         const salaNombre = button.getAttribute('data-sala-nombre');
         const salaEstado = button.getAttribute('data-sala-estado');
 
-        document.getElementById('adminSalaId').value = salaId;
+        document.getElementById('modalAdminSalaId').value = salaId;
         document.getElementById('adminInfoBox').textContent = salaNombre.toUpperCase();
 
         const badge = document.getElementById('adminEstadoBadge');

@@ -99,8 +99,7 @@
               "ViewState": "AgIAAGwAAAAAAAAAAAAowB8AAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-06-13T12:01:30.165Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -112,8 +111,7 @@
               "RelativeToolTip": "wwwroot\\js\\panel-salas.js",
               "ViewState": "AgIAAOwAAAAAAAAAAAAowLQAAAA4AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-06-13T20:11:37.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-13T20:11:37.703Z"
             },
             {
               "$type": "Document",
@@ -161,8 +159,7 @@
               "RelativeToolTip": "Views\\Auth\\Login.cshtml",
               "ViewState": "AgIAAIMAAAAAAAAAAAAcwK0AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-06T07:50:16.845Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-06T07:50:16.845Z"
             },
             {
               "$type": "Document",
@@ -172,7 +169,7 @@
               "RelativeDocumentMoniker": "Controllers\\ReservasController.cs",
               "ToolTip": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\Controllers\\ReservasController.cs",
               "RelativeToolTip": "Controllers\\ReservasController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAlwEQBAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-13T12:35:02.077Z",
               "EditorCaption": ""
@@ -199,8 +196,7 @@
               "RelativeToolTip": "Hubs\\SalasHub.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-13T18:28:28.172Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-13T18:28:28.172Z"
             },
             {
               "$type": "Document",

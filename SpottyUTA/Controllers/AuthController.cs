@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SpottyUTA.Data;
 using SpottyUTA.Models;
+using System.Threading.Tasks;
 
 namespace SpottyUTA.Controllers
 {
@@ -18,7 +19,6 @@ namespace SpottyUTA.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            // Si ya tiene sesión abierta, lo mandamos directo al panel
             if (HttpContext.Session.GetInt32("UsuarioId") != null)
             {
                 return RedirectToAction("Index", "Home");
@@ -38,7 +38,6 @@ namespace SpottyUTA.Controllers
 
             string emailLower = correo.Trim().ToLower();
 
-            // 1. Clasificar el Rol estrictamente por el dominio del correo institucional
             string rolAsignado = "";
             if (emailLower.EndsWith("@gestion.uta.cl"))
             {
@@ -54,22 +53,13 @@ namespace SpottyUTA.Controllers
                 return RedirectToAction("Login");
             }
 
-            // 2. Buscar al usuario en SQL Server usando tu propiedad real: CorreoUta
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.CorreoUta.ToLower() == emailLower);
 
-            // Si es un usuario nuevo en tu base local de pruebas, lo creamos de inmediato con tus columnas reales
             if (usuario == null)
             {
-                usuario = new Usuario
-                {
-                    CorreoUta = emailLower,
-                    NombreCompleto = rolAsignado == "Administrador" ? "Funcionario Biblioteca" : "Alumno UTA",
-                    Rol = rolAsignado,
-                    ContadorInasistencias = 0,
-                    EstaBloqueado = false
-                };
-                _context.Usuarios.Add(usuario);
-                await _context.SaveChangesAsync();
+                TempData["PendingEmail"] = emailLower;
+                TempData["PendingRol"] = rolAsignado;
+                return RedirectToAction("Register");
             }
 
             if (usuario.EstaBloqueado)
@@ -78,7 +68,6 @@ namespace SpottyUTA.Controllers
                 return RedirectToAction("Login");
             }
 
-            // 3. Guardar los datos del usuario en la Sesión
             HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
             HttpContext.Session.SetString("UsuarioRol", usuario.Rol);
             HttpContext.Session.SetString("UsuarioNombre", usuario.NombreCompleto);
@@ -88,9 +77,65 @@ namespace SpottyUTA.Controllers
         }
 
         [HttpGet]
+        public IActionResult Register()
+        {
+            var email = TempData["PendingEmail"] as string;
+            var rol = TempData["PendingRol"] as string;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(rol))
+            {
+                return RedirectToAction("Login");
+            }
+
+            TempData.Keep("PendingEmail");
+            TempData.Keep("PendingRol");
+
+            ViewBag.Email = email;
+            ViewBag.Rol = rol;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompletarRegistro(string nombreCompleto, string email, string rol)
+        {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(rol))
+            {
+                TempData["ErrorMessage"] = "Sesión de registro expirada o inválida.";
+                return RedirectToAction("Login");
+            }
+
+            if (string.IsNullOrWhiteSpace(nombreCompleto))
+            {
+                TempData["PendingEmail"] = email;
+                TempData["PendingRol"] = rol;
+                TempData["ErrorMessage"] = "El nombre completo es obligatorio.";
+                return RedirectToAction("Register");
+            }
+
+            var usuario = new Usuario
+            {
+                CorreoUta = email,
+                NombreCompleto = nombreCompleto.Trim(),
+                Rol = rol,
+                ContadorInasistencias = 0,
+                EstaBloqueado = false
+            };
+
+            _context.Usuarios.Add(usuario);
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
+            HttpContext.Session.SetString("UsuarioRol", usuario.Rol);
+            HttpContext.Session.SetString("UsuarioNombre", usuario.NombreCompleto);
+
+            TempData["SuccessMessage"] = $"¡Bienvenido {usuario.NombreCompleto}! Tu cuenta ha sido registrada con éxito.";
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
         public IActionResult CerrarSesion()
         {
-            // Limpiar la sesión por completo al salir
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }

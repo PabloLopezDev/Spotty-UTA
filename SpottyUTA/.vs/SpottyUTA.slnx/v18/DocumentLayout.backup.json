@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|c:\\users\\pablo\\documents\\github\\spotty-uta\\spottyuta\\controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|solutionrelative:controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|c:\\users\\pablo\\documents\\github\\spotty-uta\\spottyuta\\hubs\\salashub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|solutionrelative:hubs\\salashub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|c:\\users\\pablo\\documents\\github\\spotty-uta\\spottyuta\\wwwroot\\js\\panel-salas.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|solutionrelative:wwwroot\\js\\panel-salas.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|c:\\users\\pablo\\documents\\github\\spotty-uta\\spottyuta\\controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|solutionrelative:controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{08C8E936-DE6B-831B-8EDB-C515CA26C7BF}|SpottyUTA.csproj|c:\\users\\pablo\\documents\\github\\spotty-uta\\spottyuta\\views\\auth\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -86,11 +86,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 552,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Index.cshtml",
               "DocumentMoniker": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\Views\\Home\\Index.cshtml",
               "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
@@ -99,12 +99,11 @@
               "ViewState": "AgIAAGwAAAAAAAAAAAAowB8AAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-06-13T12:01:30.165Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "panel-salas.js",
               "DocumentMoniker": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\wwwroot\\js\\panel-salas.js",
               "RelativeDocumentMoniker": "wwwroot\\js\\panel-salas.js",
@@ -112,8 +111,7 @@
               "RelativeToolTip": "wwwroot\\js\\panel-salas.js",
               "ViewState": "AgIAAOwAAAAAAAAAAAAowLQAAAA4AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-06-13T20:11:37.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-13T20:11:37.703Z"
             },
             {
               "$type": "Document",
@@ -161,18 +159,17 @@
               "RelativeToolTip": "Views\\Auth\\Login.cshtml",
               "ViewState": "AgIAAIMAAAAAAAAAAAAcwK0AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-07-06T07:50:16.845Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-06T07:50:16.845Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "ReservasController.cs",
               "DocumentMoniker": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\Controllers\\ReservasController.cs",
               "RelativeDocumentMoniker": "Controllers\\ReservasController.cs",
               "ToolTip": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\Controllers\\ReservasController.cs",
               "RelativeToolTip": "Controllers\\ReservasController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAlwEQBAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-13T12:35:02.077Z",
               "EditorCaption": ""
@@ -191,7 +188,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "SalasHub.cs",
               "DocumentMoniker": "C:\\Users\\Pablo\\Documents\\GitHub\\Spotty-UTA\\SpottyUTA\\Hubs\\SalasHub.cs",
               "RelativeDocumentMoniker": "Hubs\\SalasHub.cs",
@@ -199,8 +196,7 @@
               "RelativeToolTip": "Hubs\\SalasHub.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-13T18:28:28.172Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-13T18:28:28.172Z"
             },
             {
               "$type": "Document",

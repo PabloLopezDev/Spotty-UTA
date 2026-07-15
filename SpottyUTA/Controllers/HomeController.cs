@@ -11,199 +11,54 @@ namespace SpottyUTA.Controllers
 {
 
     public class HomeController : Controller
-
     {
-
         private readonly SpottyUtaContext _context;
+        private readonly Services.ISalasService _salasService;
 
-
-
-        public HomeController(SpottyUtaContext context)
-
+        public HomeController(SpottyUtaContext context, Services.ISalasService salasService)
         {
-
             _context = context;
-
+            _salasService = salasService;
         }
 
-
-
         public async Task<IActionResult> Index()
-
         {
+            var ahora = DateTime.Now;
+            var fechaActual = DateOnly.FromDateTime(ahora);
+            var horaActual = TimeOnly.FromDateTime(ahora);
 
-            DateTime ahoraDateTime = DateTime.Now;
-
-            DateOnly fechaActual = DateOnly.FromDateTime(ahoraDateTime);
-
-            TimeOnly horaActualTime = TimeOnly.FromDateTime(ahoraDateTime);
-
-
-
-            ViewBag.DiaSemana = ahoraDateTime.DayOfWeek;
-
-
-
-            // 1. Buscamos por "A" o "Activa" las reservas vigentes o futuras de hoy
+            ViewBag.DiaSemana = ahora.DayOfWeek;
 
             var reservasHoy = await _context.Reservas
-
-            .Where(r => r.Fecha == fechaActual &&
-
-            r.HoraFin >= horaActualTime &&
-
-            (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
-
-            .OrderBy(r => r.HoraInicio)
-
-            .ToListAsync();
-
-
+                .AsNoTracking()
+                .Where(r => r.Fecha == fechaActual &&
+                       r.HoraFin >= horaActual &&
+                       (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
+                .OrderBy(r => r.HoraInicio)
+                .ToListAsync();
 
             ViewBag.ReservasHoy = reservasHoy;
 
+            var salas = await _context.Salas
+                .AsNoTracking()
+                .OrderBy(s => s.Piso)
+                .ThenBy(s => s.Nombre)
+                .ToListAsync();
 
-
-            // Traer todas las salas y determinaciones de jornada
-            var salas = await _context.Salas.OrderBy(s => s.Piso).ThenBy(s => s.Nombre).ToListAsync();
-
-            // REGLA DE APERTURA Y CIERRE DE LA BIBLIOTECA (UTA)
-            // Lunes-Viernes: 08:00 - 21:00
-            // Sábado: 09:00 - 13:00 (solo 1er piso habilitado)
-            // Domingo: cerrado (todas inactivas)
-
-            TimeOnly apertura;
-            TimeOnly cierre;
-            bool soloPrimerPiso = false;
-
-            if (ahoraDateTime.DayOfWeek == DayOfWeek.Sunday)
-            {
-                // Domingo: cerrado
-                apertura = TimeOnly.MinValue;
-                cierre = TimeOnly.MinValue;
-            }
-            else if (ahoraDateTime.DayOfWeek == DayOfWeek.Saturday)
-            {
-                apertura = new TimeOnly(9, 0);
-                cierre = new TimeOnly(13, 0);
-                soloPrimerPiso = true;
-            }
-            else
-            {
-                apertura = new TimeOnly(8, 0);
-                cierre = new TimeOnly(21, 0);
-            }
-
-            // Biblioteca cerrada si es domingo o si la hora actual está fuera del rango de apertura
-            bool bibliotecaCerrada = (ahoraDateTime.DayOfWeek == DayOfWeek.Sunday) || (horaActualTime < apertura) || (horaActualTime >= cierre);
-
-
-            // 2. Cálculo de estados adaptativo en tiempo real
+            var horario = _salasService.ObtenerHorarioOperacion(ahora);
 
             foreach (var sala in salas)
-
             {
-
-                // CASO CRÍTICO: Si la biblioteca está cerrada, forzamos estado Inactiva ("I") y saltamos la sala
-                if (bibliotecaCerrada)
-                {
-                    sala.EstadoActual = "I";
-                    sala.Reservas = new List<Reserva>();
-                    continue;
-                }
-
-                // Si es jornada de fin de semana, solo el primer piso está habilitado
-                if (soloPrimerPiso && sala.Piso != 1)
-                {
-                    sala.EstadoActual = "I";
-                    sala.Reservas = new List<Reserva>();
-                    continue;
-                }
-
-                // Si está abierta, calculamos su estado normal (D, R u O)
-                var reservasDeEstaSala = reservasHoy.Where(r => r.SalaId == sala.Id).ToList();
-
-
-
-                // Caso 1: ¿La hora actual está dentro de una reserva?
-
-                var reservaActual = reservasDeEstaSala.FirstOrDefault(r => horaActualTime >= r.HoraInicio && horaActualTime < r.HoraFin);
-
-
-
-                if (reservaActual != null)
-
-                {
-
-                    double minutosTranscurridos = (horaActualTime.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
-
-
-
-                    if (minutosTranscurridos <= 15)
-
-                    {
-
-                        sala.EstadoActual = "R"; // Estado naranjo de espera (tolerancia)
-
-                    }
-
-                    else
-
-                    {
-
-                        sala.EstadoActual = "O"; // Se consolidó como ocupado
-
-                    }
-
-                }
-
-                else
-
-                {
-
-                    // Caso 2: ¿Hay una reserva futura que empiece en menos de 20 minutos?
-
-                    bool proximaReservaCercana = reservasDeEstaSala.Any(r =>
-
-                    r.HoraInicio > horaActualTime &&
-
-                    (r.HoraInicio.ToTimeSpan() - horaActualTime.ToTimeSpan()).TotalMinutes <= 20);
-
-
-
-                    if (proximaReservaCercana)
-
-                    {
-
-                        sala.EstadoActual = "R";
-
-                    }
-
-                    else
-
-                    {
-
-                        sala.EstadoActual = "D"; // Totalmente libre
-
-                    }
-
-                }
-
+                sala.Reservas = new List<Reserva>();
+                sala.EstadoActual = _salasService.ObtenerEstadoSala(sala, reservasHoy, horaActual, horario);
             }
 
-
-
             return View(salas);
-
         }
-
-
 
         public IActionResult Privacy() => View();
 
         public IActionResult Reglamento() => View();
-
     }
-
 }
 

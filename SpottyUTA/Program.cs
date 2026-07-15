@@ -14,6 +14,8 @@ namespace SpottyUTA
             builder.Services.AddDbContext<SpottyUtaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddSignalR();
+            builder.Services.AddScoped<SpottyUTA.Services.ISalasService, SpottyUTA.Services.SalasService>();
+            builder.Services.AddScoped<SpottyUTA.Services.IReservasService, SpottyUTA.Services.ReservasService>();
             // Background broadcaster to push sala state periodically (catches DB edits and time-based expirations)
             builder.Services.AddHostedService<SpottyUTA.Services.SalasStateBroadcaster>();
             // Añadir servicios de sesión
