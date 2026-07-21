@@ -1,24 +1,43 @@
 using Microsoft.EntityFrameworkCore;
 using SpottyUTA.Data;
+using SpottyUTA.Hubs;
+using SpottyUTA.Services;
 
 namespace SpottyUTA
 {
+    /// <summary>
+    /// Punto de entrada principal de la aplicación Spotty UTA.
+    /// Configura los servicios de inyección de dependencias, middleware HTTP,
+    /// SignalR, sesiones y el pipeline de la aplicación ASP.NET Core.
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// Método principal que inicia la aplicación web.
+        /// </summary>
+        /// <param name="args">Argumentos de línea de comandos.</param>
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Servicios MVC con vistas Razor
             builder.Services.AddControllersWithViews();
+
+            // Contexto de base de datos Entity Framework Core (SQL Server)
             builder.Services.AddDbContext<SpottyUtaContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // SignalR para comunicación en tiempo real
             builder.Services.AddSignalR();
-            builder.Services.AddScoped<SpottyUTA.Services.ISalasService, SpottyUTA.Services.SalasService>();
-            builder.Services.AddScoped<SpottyUTA.Services.IReservasService, SpottyUTA.Services.ReservasService>();
-            // Background broadcaster to push sala state periodically (catches DB edits and time-based expirations)
-            builder.Services.AddHostedService<SpottyUTA.Services.SalasStateBroadcaster>();
-            // Añadir servicios de sesión
+
+            // Servicios de negocio (Scoped: una instancia por solicitud HTTP)
+            builder.Services.AddScoped<ISalasService, SalasService>();
+            builder.Services.AddScoped<IReservasService, ReservasService>();
+
+            // Servicio en segundo plano: broadcasting periódico de estados de salas
+            builder.Services.AddHostedService<SalasStateBroadcaster>();
+
+            // Configuración de sesiones de servidor
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
             {
@@ -26,28 +45,32 @@ namespace SpottyUTA
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Pipeline HTTP
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
             app.UseSession();
             app.UseHttpsRedirection();
             app.UseRouting();
-
             app.UseAuthorization();
 
+            // Archivos estáticos (CSS, JS, imágenes)
             app.MapStaticAssets();
-            app.MapHub<SpottyUTA.Hubs.SalasHub>("/salasHub");
+
+            // Endpoint de SignalR
+            app.MapHub<SalasHub>("/salasHub");
+
+            // Ruta MVC por defecto
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
                 .WithStaticAssets();
-
 
             app.Run();
         }

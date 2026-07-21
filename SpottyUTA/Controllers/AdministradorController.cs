@@ -11,12 +11,23 @@ using System.Threading.Tasks;
 
 namespace SpottyUTA.Controllers
 {
+    /// <summary>
+    /// Controlador principal del panel de administración de Spotty UTA.
+    /// Gestiona las vistas de Dashboard, Reservas Activas, Gestión de Salas y Usuarios,
+    /// así como las acciones CRUD sobre salas y la gestión de bloqueos de usuarios.
+    /// </summary>
     public class AdministradorController : Controller
     {
         private readonly IReservasService _reservasService;
         private readonly ISalasService _salasService;
         private readonly SpottyUtaContext _context;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="AdministradorController"/>.
+        /// </summary>
+        /// <param name="reservasService">Servicio de lógica de negocio de reservas.</param>
+        /// <param name="salasService">Servicio de lógica de negocio de salas.</param>
+        /// <param name="context">Contexto de acceso a datos de Entity Framework Core.</param>
         public AdministradorController(IReservasService reservasService, ISalasService salasService, SpottyUtaContext context)
         {
             _reservasService = reservasService;
@@ -24,6 +35,12 @@ namespace SpottyUTA.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Muestra el Dashboard principal del administrador con KPIs de salas,
+        /// reservas activas del momento, próximas reservas y actividad reciente.
+        /// </summary>
+        /// <param name="partial">Si es true, devuelve solo el contenido parcial para refresco AJAX.</param>
+        /// <returns>Vista completa del Dashboard o PartialView para refresco vía SignalR.</returns>
         [HttpGet]
         public async Task<IActionResult> Dashboard(bool partial = false)
         {
@@ -90,7 +107,7 @@ namespace SpottyUTA.Controllers
 
             ViewBag.ProximasReservas = proximasReservas;
 
-            // 4. Actividad reciente: últimas reservas creadas, canceladas o usadas de hoy/recientes (ID desc)
+            // 4. Actividad reciente: últimas reservas creadas, canceladas o usadas (ID desc)
             var actividadReciente = await _context.Reservas
                 .Include(r => r.Usuario)
                 .Include(r => r.Sala)
@@ -107,6 +124,11 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Muestra la vista de Reservas Activas con tabla filtrable, KPIs y vista de ocupación temporal.
+        /// </summary>
+        /// <param name="partial">Si es true, devuelve solo el contenido parcial para refresco AJAX.</param>
+        /// <returns>Vista completa de Reservas Activas o PartialView para refresco vía SignalR.</returns>
         [HttpGet]
         public async Task<IActionResult> ReservasActivas(bool partial = false)
         {
@@ -136,7 +158,7 @@ namespace SpottyUTA.Controllers
 
             ViewBag.ReservasActivas = reservasActivas;
 
-            // 3. Calcular métricas KPI completas (coincidentes con Figma: Total, Disponibles, Reservadas, Ocupadas)
+            // 3. Calcular métricas KPI completas
             var horario = _salasService.ObtenerHorarioOperacion(ahora);
 
             int disponibles = 0;
@@ -165,6 +187,13 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Registra la asistencia de un estudiante desde el panel del mesón de atención.
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario.</param>
+        /// <param name="estadoAsistencia">Estado a registrar: "Presente", "LiberarTemprano" o "Inasistencia".</param>
+        /// <param name="adminSalaId">Identificador de la sala gestionada.</param>
+        /// <returns>Redirección a Home/Index con mensajes de resultado.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarAsistencia(int usuarioId, string estadoAsistencia, int adminSalaId)
@@ -195,6 +224,11 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        /// <summary>
+        /// Activa o desactiva el modo de simulación de tiempo del sistema.
+        /// </summary>
+        /// <param name="enable">True para activar, false para desactivar.</param>
+        /// <returns>Redirección al Dashboard con mensaje de confirmación.</returns>
         [HttpPost]
         public async Task<IActionResult> ToggleSimulationMode(bool enable)
         {
@@ -206,13 +240,20 @@ namespace SpottyUTA.Controllers
 
             SpottyUTA.Helpers.SimulationTime.IsEnabled = enable;
             
-            // Broadcast states immediately so all views (dashboard, floor layout) update in real-time!
+            // Transmitir estados inmediatamente para que todas las vistas se actualicen en tiempo real
             await _salasService.BroadcastEstadosAsync();
             
             TempData["SuccessMessage"] = enable ? "Modo simulación activado (Lunes 10:00 AM)." : "Modo simulación desactivado (Tiempo real).";
             return RedirectToAction("Dashboard");
         }
 
+        /// <summary>
+        /// Muestra la vista de Gestión de Salas con la matriz de estados por pisos,
+        /// KPIs de salas activas/inhabilitadas y opciones de administración.
+        /// </summary>
+        /// <param name="tab">Pestaña activa del filtro ("all", "piso1", "piso2", "piso3").</param>
+        /// <param name="partial">Si es true, devuelve solo el contenido parcial para refresco AJAX.</param>
+        /// <returns>Vista completa de Gestión de Salas o PartialView para refresco vía SignalR.</returns>
         [HttpGet]
         public async Task<IActionResult> GestionSalas(string tab = "all", bool partial = false)
         {
@@ -266,6 +307,14 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Agrega una nueva sala de estudio al sistema.
+        /// Valida nombre único y rango de piso válido (1-3).
+        /// </summary>
+        /// <param name="nombre">Nombre descriptivo de la nueva sala.</param>
+        /// <param name="piso">Número de piso donde se ubicará la sala (1, 2 o 3).</param>
+        /// <param name="activeTab">Pestaña activa para mantener el contexto del filtro.</param>
+        /// <returns>Redirección a GestionSalas con mensaje de resultado.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AgregarSala(string nombre, int piso, string activeTab = "all")
@@ -308,6 +357,12 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("GestionSalas", new { tab = activeTab });
         }
 
+        /// <summary>
+        /// Alterna el estado de una sala entre Activa ("D") e Inhabilitada ("I").
+        /// </summary>
+        /// <param name="salaId">Identificador de la sala a modificar.</param>
+        /// <param name="activeTab">Pestaña activa para mantener el contexto del filtro.</param>
+        /// <returns>Redirección a GestionSalas con mensaje de resultado.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleEstadoSala(int salaId, string activeTab = "all")
@@ -342,6 +397,13 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("GestionSalas", new { tab = activeTab });
         }
 
+        /// <summary>
+        /// Elimina definitivamente una sala del sistema. Solo se permite si no tiene
+        /// reservas activas en curso. Si tiene historial de reservas, se inhabilita en su lugar.
+        /// </summary>
+        /// <param name="salaId">Identificador de la sala a eliminar.</param>
+        /// <param name="activeTab">Pestaña activa para mantener el contexto del filtro.</param>
+        /// <returns>Redirección a GestionSalas con mensaje de resultado.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EliminarSala(int salaId, string activeTab = "all")
@@ -393,6 +455,13 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("GestionSalas", new { tab = activeTab });
         }
 
+        /// <summary>
+        /// Muestra la vista de gestión de usuarios con filtros por rol y estado,
+        /// KPIs de usuarios habilitados, bloqueados y en riesgo.
+        /// </summary>
+        /// <param name="tab">Pestaña activa del filtro ("all", "habilitados", "bloqueados", "estudiantes", "admins").</param>
+        /// <param name="partial">Si es true, devuelve solo el contenido parcial para refresco AJAX.</param>
+        /// <returns>Vista completa de Usuarios o PartialView.</returns>
         [HttpGet]
         public async Task<IActionResult> Usuarios(string tab = "all", bool partial = false)
         {
@@ -432,6 +501,12 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Alterna el estado de bloqueo de un usuario (bloquear/desbloquear).
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario a modificar.</param>
+        /// <param name="activeTab">Pestaña activa para mantener el contexto del filtro.</param>
+        /// <returns>Redirección a Usuarios con mensaje de resultado.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleBloqueoUsuario(int usuarioId, string activeTab = "all")
@@ -464,6 +539,12 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("Usuarios", new { tab = activeTab });
         }
 
+        /// <summary>
+        /// Reinicia a cero el contador de inasistencias de un usuario y desbloquea su cuenta.
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario.</param>
+        /// <param name="activeTab">Pestaña activa para mantener el contexto del filtro.</param>
+        /// <returns>Redirección a Usuarios con mensaje de confirmación.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReiniciarInasistencias(int usuarioId, string activeTab = "all")

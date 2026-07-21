@@ -8,12 +8,23 @@ using SpottyUTA.Models;
 
 namespace SpottyUTA.Services
 {
+    /// <summary>
+    /// Implementación del servicio de gestión de reservas de boxes de estudio.
+    /// Contiene la lógica de creación de reservas, gestión de acciones administrativas
+    /// y registro de asistencia con validaciones de negocio.
+    /// </summary>
     public class ReservasService : IReservasService
     {
         private readonly SpottyUtaContext _context;
         private readonly ISalasService _salasService;
         private readonly ILogger<ReservasService> _logger;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="ReservasService"/>.
+        /// </summary>
+        /// <param name="context">Contexto de acceso a datos de Entity Framework Core.</param>
+        /// <param name="salasService">Servicio de salas para broadcasting de estados.</param>
+        /// <param name="logger">Logger para registro de eventos y errores.</param>
         public ReservasService(
             SpottyUtaContext context,
             ISalasService salasService,
@@ -24,6 +35,7 @@ namespace SpottyUTA.Services
             _logger = logger;
         }
 
+        /// <inheritdoc />
         public async Task<(bool Success, string? ErrorMessage, string? BloqueAsignado)> CrearReservaAsync(
             int salaId,
             int usuarioId,
@@ -43,6 +55,7 @@ namespace SpottyUTA.Services
             var ahora = SpottyUTA.Helpers.SimulationTime.Now;
             var fechaHoy = DateOnly.FromDateTime(ahora);
 
+            // Verificar si el usuario ya tiene una reserva activa
             var horaActualControl = TimeOnly.FromDateTime(ahora);
             bool yaTieneReservaActiva = await _context.Reservas
                 .AnyAsync(r => r.UsuarioId == usuarioId &&
@@ -69,6 +82,7 @@ namespace SpottyUTA.Services
             apertura = horario.Apertura;
             cierre = horario.Cierre;
 
+            // Validar restricción de pisos los sábados
             if (diaSemana == DayOfWeek.Saturday)
             {
                 var salaInfo = await _context.Salas.FindAsync(salaId);
@@ -82,23 +96,27 @@ namespace SpottyUTA.Services
                 }
             }
 
+            // Validar que la hora de inicio no esté en el pasado
             var ahoraTimeOnly = TimeOnly.FromDateTime(ahora);
             if (horaInicio < ahoraTimeOnly.AddMinutes(-5))
             {
                 return (false, "No puedes reservar con una hora de inicio en el pasado.", null);
             }
 
+            // Validar proximidad al cierre (mínimo 30 minutos antes)
             if (horaInicio >= cierre || horaInicio > cierre.AddMinutes(-30))
             {
                 return (false, $"No es posible reservar con menos de 30 minutos disponibles antes del cierre (cierre: {cierre:HH:mm}).", null);
             }
 
+            // Calcular hora de fin (máximo 2 horas, ajustada al cierre)
             TimeOnly horaFinSugerida = horaInicio.AddHours(2);
             if (horaFinSugerida > cierre)
             {
                 horaFinSugerida = cierre;
             }
 
+            // Verificar solapamiento con reservas existentes
             var reservasExistentes = await _context.Reservas
                 .Where(r => r.SalaId == salaId && r.Fecha == fechaHoy && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
                 .OrderBy(r => r.HoraInicio)
@@ -110,18 +128,21 @@ namespace SpottyUTA.Services
                 return (false, $"El box ya se encuentra ocupado en ese horario ({overlapAtStart.HoraInicio:HH:mm} - {overlapAtStart.HoraFin:HH:mm}).", null);
             }
 
+            // Ajustar hora de fin si hay una reserva futura que colisiona
             var primeraReservaFutura = reservasExistentes.Where(r => r.HoraInicio > horaInicio).OrderBy(r => r.HoraInicio).FirstOrDefault();
             if (primeraReservaFutura != null && primeraReservaFutura.HoraInicio < horaFinSugerida)
             {
                 horaFinSugerida = primeraReservaFutura.HoraInicio;
             }
 
+            // Validar duración mínima de 30 minutos
             var duracionMinutos = (horaFinSugerida.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
             if (duracionMinutos < 30)
             {
                 return (false, "El tiempo útil disponible es inferior al mínimo requerido de 30 minutos tras ajustes. Elige otro horario.", null);
             }
 
+            // Crear y persistir la nueva reserva
             var nuevaReserva = new Reserva
             {
                 SalaId = salaId,
@@ -135,13 +156,14 @@ namespace SpottyUTA.Services
             _context.Reservas.Add(nuevaReserva);
             await _context.SaveChangesAsync();
 
-            // Broadcast real-time updates over SignalR
+            // Transmitir actualización en tiempo real vía SignalR
             await _salasService.BroadcastEstadosAsync();
 
             string bloqueAsignado = $"{horaInicio:HH:mm} - {horaFinSugerida:HH:mm}";
             return (true, null, bloqueAsignado);
         }
 
+        /// <inheritdoc />
         public async Task<(bool Success, string? ErrorMessage, string? SuccessMessage, string? WarningMessage)> GestionarAccionDashboardAsync(
             int reservaId,
             string accion,
@@ -166,6 +188,7 @@ namespace SpottyUTA.Services
 
             if (accion == "ocupar")
             {
+                // Confirmar asistencia presencial del estudiante
                 reserva.EstadoReserva = "Activa";
 
                 var sala = await _context.Salas.FindAsync(reserva.SalaId);
@@ -178,6 +201,7 @@ namespace SpottyUTA.Services
             }
             else if (accion == "liberar")
             {
+                // Liberar box sin penalización
                 var sala = await _context.Salas.FindAsync(reserva.SalaId);
                 if (sala != null)
                 {
@@ -189,6 +213,7 @@ namespace SpottyUTA.Services
             }
             else if (accion == "falta")
             {
+                // Marcar inasistencia con posible bloqueo automático
                 var sala = await _context.Salas.FindAsync(reserva.SalaId);
                 if (sala != null)
                 {
@@ -215,12 +240,13 @@ namespace SpottyUTA.Services
 
             await _context.SaveChangesAsync();
 
-            // Broadcast real-time updates over SignalR
+            // Transmitir actualización en tiempo real vía SignalR
             await _salasService.BroadcastEstadosAsync();
 
             return (true, null, successMessage, warningMessage);
         }
 
+        /// <inheritdoc />
         public async Task<(bool Success, string? ErrorMessage, string? SuccessMessage, string? WarningMessage)> RegistrarAsistenciaAsync(
             int usuarioId,
             string estadoAsistencia,
@@ -234,6 +260,7 @@ namespace SpottyUTA.Services
 
             var sala = await _context.Salas.FirstOrDefaultAsync(s => s.Id == adminSalaId);
 
+            // Buscar la reserva vigente más reciente en la sala indicada
             var reservaVigente = await _context.Reservas
                 .Where(r => r.SalaId == adminSalaId && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
                 .OrderByDescending(r => r.Id)
@@ -247,6 +274,7 @@ namespace SpottyUTA.Services
 
             if (estadoAsistencia == "Presente")
             {
+                // Confirmar presencia del estudiante en el box
                 if (sala != null)
                 {
                     sala.EstadoActual = "O";
@@ -257,6 +285,7 @@ namespace SpottyUTA.Services
             }
             else if (estadoAsistencia == "LiberarTemprano")
             {
+                // Liberar box anticipadamente sin sanción
                 if (sala != null)
                 {
                     sala.EstadoActual = "D";
@@ -273,6 +302,7 @@ namespace SpottyUTA.Services
             }
             else if (estadoAsistencia == "Inasistencia")
             {
+                // Registrar inasistencia con posible bloqueo automático al acumular 3 faltas
                 if (sala != null)
                 {
                     sala.EstadoActual = "D";
@@ -303,7 +333,7 @@ namespace SpottyUTA.Services
 
             await _context.SaveChangesAsync();
 
-            // Broadcast real-time updates over SignalR
+            // Transmitir actualización en tiempo real vía SignalR
             await _salasService.BroadcastEstadosAsync();
 
             return (true, null, successMessage, warningMessage);

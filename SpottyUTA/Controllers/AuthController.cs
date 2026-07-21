@@ -7,15 +7,28 @@ using System.Threading.Tasks;
 
 namespace SpottyUTA.Controllers
 {
+    /// <summary>
+    /// Controlador de autenticación y registro de usuarios.
+    /// Gestiona el inicio de sesión, registro de nuevas cuentas y cierre de sesión.
+    /// </summary>
     public class AuthController : Controller
     {
         private readonly SpottyUtaContext _context;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="AuthController"/>.
+        /// </summary>
+        /// <param name="context">Contexto de acceso a datos de Entity Framework Core.</param>
         public AuthController(SpottyUtaContext context)
         {
             _context = context;
         }
 
+        /// <summary>
+        /// Muestra el formulario de inicio de sesión. Si el usuario ya tiene una sesión activa,
+        /// redirige automáticamente a la página principal.
+        /// </summary>
+        /// <returns>Vista de login o redirección a Home/Index.</returns>
         [HttpGet]
         public IActionResult Login()
         {
@@ -26,6 +39,12 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Procesa la solicitud de inicio de sesión validando el correo institucional UTA.
+        /// Determina el rol según el dominio del correo y crea la sesión del usuario.
+        /// </summary>
+        /// <param name="correo">Correo institucional ingresado por el usuario.</param>
+        /// <returns>Redirección a Home/Index si es exitoso, o de vuelta al Login con mensaje de error.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> IniciarSesion(string correo)
@@ -75,6 +94,11 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        /// <summary>
+        /// Muestra el formulario de registro para usuarios nuevos que no existen en la base de datos.
+        /// Requiere datos pendientes almacenados en TempData (correo y rol).
+        /// </summary>
+        /// <returns>Vista de registro o redirección al login si los datos pendientes expiraron.</returns>
         [HttpGet]
         public IActionResult Register()
         {
@@ -94,6 +118,14 @@ namespace SpottyUTA.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Completa el registro de un nuevo usuario, creando su cuenta en la base de datos
+        /// e iniciando sesión automáticamente.
+        /// </summary>
+        /// <param name="nombreCompleto">Nombre completo del nuevo usuario.</param>
+        /// <param name="email">Correo institucional del usuario.</param>
+        /// <param name="rol">Rol asignado ("Estudiante" o "Administrador").</param>
+        /// <returns>Redirección a Home/Index con mensaje de bienvenida.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CompletarRegistro(string nombreCompleto, string email, string rol)
@@ -132,6 +164,10 @@ namespace SpottyUTA.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        /// <summary>
+        /// Destruye la sesión del usuario actual y redirige al formulario de inicio de sesión.
+        /// </summary>
+        /// <returns>Redirección a la vista de Login.</returns>
         [HttpGet]
         public IActionResult CerrarSesion()
         {

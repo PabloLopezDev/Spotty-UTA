@@ -10,17 +10,27 @@ using SpottyUTA.Models;
 
 namespace SpottyUTA.Services
 {
+    /// <summary>
+    /// Implementación del servicio de gestión de salas de estudio.
+    /// Calcula estados operativos, genera payloads para SignalR y transmite actualizaciones en tiempo real.
+    /// </summary>
     public class SalasService : ISalasService
     {
         private readonly SpottyUtaContext _context;
         private readonly IHubContext<SalasHub> _hubContext;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="SalasService"/>.
+        /// </summary>
+        /// <param name="context">Contexto de acceso a datos de Entity Framework Core.</param>
+        /// <param name="hubContext">Contexto del hub de SignalR para broadcasting.</param>
         public SalasService(SpottyUtaContext context, IHubContext<SalasHub> hubContext)
         {
             _context = context;
             _hubContext = hubContext;
         }
 
+        /// <inheritdoc />
         public LibrarySchedule ObtenerHorarioOperacion(DateTime ahora)
         {
             if (ahora.DayOfWeek == DayOfWeek.Sunday)
@@ -36,6 +46,7 @@ namespace SpottyUTA.Services
             return new LibrarySchedule { Apertura = new TimeOnly(8, 0), Cierre = new TimeOnly(21, 0), SoloPrimerPiso = false, Cerrada = false };
         }
 
+        /// <inheritdoc />
         public string ObtenerEstadoSala(Sala sala, List<Reserva> reservasHoy, TimeOnly horaActual, LibrarySchedule horario)
         {
             if (horario.Cerrada)
@@ -85,6 +96,7 @@ namespace SpottyUTA.Services
             return proximaReservaCercana ? "R" : "D";
         }
 
+        /// <inheritdoc />
         public async Task<List<object>> ObtenerPayloadEstadosSalasAsync()
         {
             var ahora = SpottyUTA.Helpers.SimulationTime.Now;
@@ -126,6 +138,7 @@ namespace SpottyUTA.Services
             return payload;
         }
 
+        /// <inheritdoc />
         public async Task BroadcastEstadosAsync()
         {
             try

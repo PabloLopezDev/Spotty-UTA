@@ -72,43 +72,59 @@
                 <div class="header-right-actions">
                     <!-- Campana Notificaciones con Dropdown Interactivo -->
                     <div class="dropdown">
-                        <button type="button" class="btn notification-bell-container p-0 border-0" id="notifDropdownTriggerUsuarios" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button type="button" class="btn notification-bell-container p-0 border-0" id="notifDropdownTriggerUsuarios" data-bs-toggle="dropdown" data-bs-display="static" data-bs-popper-config='{"placement":"bottom-end","modifiers":[{"name":"flip","enabled":false}]}' aria-expanded="false">
                             <i class="fa-regular fa-bell bell-icon"></i>
                             <span class="notification-badge" id="notifBadgeCountUsuarios">3</span>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu mt-2">
-                            <div class="p-3 text-white d-flex align-items-center justify-content-between" style="background-color: #0F172A;">
-                                <h6 class="fw-bold mb-0 text-white" style="font-size: 0.88rem;">
-                                    <i class="fa-solid fa-bell text-warning me-2"></i>Notificaciones
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu">
+                            <div class="notif-header d-flex align-items-center justify-content-between">
+                                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                                    <i class="fa-solid fa-bell text-primary"></i>
+                                    <span>Notificaciones</span>
                                 </h6>
-                                <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.7rem;">3 Nuevas</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-2.5 py-1" style="font-size: 0.72rem; border-radius: 20px;">3 Nuevas</span>
                             </div>
-                            <div style="max-height: 280px; overflow-y: auto;">
-                                <div class="p-3 border-bottom text-start bg-white" style="transition: background-color 0.15s ease;">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-circle-exclamation text-warning me-2"></i>Box 3 próximo a vencer</span>
-                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hace 5m</span>
+                            <div style="max-height: 340px; overflow-y: auto;">
+                                <!-- Notificación 1: Lleva a Reservas Activas -->
+                                <a href="@Url.Action("ReservasActivas", "Administrador")" class="notif-item">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.86rem;">
+                                            <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                                            <span>Box 3 próximo a vencer</span>
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.72rem; font-weight: 600;">Hace 5m</span>
                                     </div>
-                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">Quedan menos de 15 minutos para la reserva activa en Box 3.</p>
-                                </div>
-                                <div class="p-3 border-bottom text-start bg-white" style="transition: background-color 0.15s ease;">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-user-xmark text-danger me-2"></i>Usuario sancionado</span>
-                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hace 20m</span>
+                                    <p class="mb-0 text-start text-secondary" style="font-size: 0.8rem; line-height: 1.45;">Quedan menos de 15 minutos para la reserva activa en Box 3.</p>
+                                </a>
+
+                                <!-- Notificación 2: Lleva a Usuarios -->
+                                <a href="@Url.Action("Usuarios", "Administrador")" class="notif-item">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.86rem;">
+                                            <i class="fa-solid fa-user-xmark text-danger"></i>
+                                            <span>Usuario sancionado</span>
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.72rem; font-weight: 600;">Hace 20m</span>
                                     </div>
-                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">El estudiante acumuló 3 faltas y fue bloqueado automáticamente.</p>
-                                </div>
-                                <div class="p-3 text-start bg-white" style="transition: background-color 0.15s ease;">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-circle-check text-success me-2"></i>Sistema Operativo</span>
-                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hoy 08:00</span>
+                                    <p class="mb-0 text-start text-secondary" style="font-size: 0.8rem; line-height: 1.45;">El estudiante acumuló 3 faltas y fue bloqueado automáticamente.</p>
+                                </a>
+
+                                <!-- Notificación 3: Lleva a Gestión de Salas -->
+                                <a href="@Url.Action("GestionSalas", "Administrador")" class="notif-item">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.86rem;">
+                                            <i class="fa-solid fa-circle-check text-success"></i>
+                                            <span>Sistema Operativo</span>
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.72rem; font-weight: 600;">Hoy 08:00</span>
                                     </div>
-                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">12 boxes de estudio disponibles para reserva hoy.</p>
-                                </div>
+                                    <p class="mb-0 text-start text-secondary" style="font-size: 0.8rem; line-height: 1.45;">12 boxes de estudio disponibles para reserva hoy.</p>
+                                </a>
                             </div>
-                            <div class="p-2.5 text-center border-top" style="background-color: #F8FAFC;">
-                                <button type="button" class="btn btn-link text-decoration-none fw-bold p-0" style="color: #2563EB; font-size: 0.78rem;" onclick="document.querySelectorAll('.notification-badge').forEach(b => b.style.display='none');">
-                                    <i class="fa-solid fa-check-double me-1"></i>Marcar todas como leídas
+                            <div class="notif-footer">
+                                <button type="button" class="btn btn-link text-decoration-none fw-bold p-0 d-inline-flex align-items-center gap-1.5 text-primary" style="font-size: 0.8rem;" onclick="marcarTodasNotificacionesLeidas();">
+                                    <i class="fa-solid fa-check-double"></i>
+                                    <span>Marcar todas como leídas</span>
                                 </button>
                             </div>
                         </div>
@@ -239,6 +255,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        function marcarTodasNotificacionesLeidas() {
+            localStorage.setItem('spotty_notif_read_all', 'true');
+            document.querySelectorAll('.notification-badge').forEach(b => b.style.display = 'none');
+        }
+
+        if (localStorage.getItem('spotty_notif_read_all') === 'true') {
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.notification-badge').forEach(b => b.style.display = 'none');
+            });
+        }
+
         let activeUsuarioTab = '@activeTab';
 
         function switchUsuarioTab(tab) {

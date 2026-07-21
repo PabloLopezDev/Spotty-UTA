@@ -1,32 +1,52 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using SpottyUTA.Models;
 
 namespace SpottyUTA.Data;
 
+/// <summary>
+/// Contexto de acceso a datos de Entity Framework Core para la base de datos Spotty UTA.
+/// </summary>
 public partial class SpottyUtaContext : DbContext
 {
+    /// <summary>
+    /// Constructor por defecto para inicialización del contexto.
+    /// </summary>
     public SpottyUtaContext()
     {
     }
 
+    /// <summary>
+    /// Constructor que recibe las opciones de configuración de DbContext.
+    /// </summary>
+    /// <param name="options">Opciones de configuración de la base de datos.</param>
     public SpottyUtaContext(DbContextOptions<SpottyUtaContext> options)
         : base(options)
     {
     }
 
+    /// <summary>
+    /// Conjunto de datos para la entidad Reserva.
+    /// </summary>
     public virtual DbSet<Reserva> Reservas { get; set; }
 
+    /// <summary>
+    /// Conjunto de datos para la entidad Sala.
+    /// </summary>
     public virtual DbSet<Sala> Salas { get; set; }
 
+    /// <summary>
+    /// Conjunto de datos para la entidad Usuario.
+    /// </summary>
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
+    /// <inheritdoc />
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-
     }
 
+    /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Reserva>(entity =>
