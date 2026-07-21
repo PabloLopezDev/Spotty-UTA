@@ -1948,3 +1948,117 @@ body.admin-body {
 .guide-box-yellow .guide-box-desc { color: #B45309 !important; }
 .guide-box-red .guide-box-desc { color: #B91C1C !important; }
 .guide-box-gray .guide-box-desc { color: #64748B !important; }
+
+/* ==========================================
+   GESTION DE SALAS STYLES
+   ========================================== */
+.gestion-salas-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 20px !important;
+    margin-top: 20px !important;
+}
+
+.sala-admin-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    display: flex;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    position: relative !important;
+}
+
+.sala-admin-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+.sala-admin-card.card-disabled {
+    background-color: #F8FAFC !important;
+    border-style: dashed !important;
+    opacity: 0.85 !important;
+}
+
+.sala-card-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    margin-bottom: 14px !important;
+}
+
+.sala-box-name {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    margin: 0 0 2px 0 !important;
+}
+
+.sala-piso-badge {
+    display: inline-block !important;
+    font-size: 0.73rem !important;
+    font-weight: 600 !important;
+    color: #64748B !important;
+    background-color: #F1F5F9 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+}
+
+.sala-status-indicator {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+}
+
+.indicator-disponible { background-color: #ECFDF5 !important; color: #065F46 !important; }
+.indicator-reservado { background-color: #FFFBEB !important; color: #92400E !important; }
+.indicator-ocupado { background-color: #FEF2F2 !important; color: #991B1B !important; }
+.indicator-inhabilitada { background-color: #F1F5F9 !important; color: #64748B !important; }
+
+.sala-card-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-top: 1px solid #F1F5F9 !important;
+    padding-top: 14px !important;
+    margin-top: auto !important;
+}
+
+.toggle-switch-form {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.form-check-input.modern-switch {
+    width: 2.5em !important;
+    height: 1.3em !important;
+    cursor: pointer !important;
+}
+
+.btn-delete-sala {
+    background: transparent !important;
+    border: 1px solid #FCA5A5 !important;
+    color: #EF4444 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-delete-sala:hover {
+    background-color: #EF4444 !important;
+    color: #FFFFFF !important;
+}

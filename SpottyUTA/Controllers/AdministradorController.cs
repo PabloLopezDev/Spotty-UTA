@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SpottyUTA.Data;
+using SpottyUTA.Models;
 using SpottyUTA.Services;
 using System;
 using System.Collections.Generic;
@@ -210,6 +211,186 @@ namespace SpottyUTA.Controllers
             
             TempData["SuccessMessage"] = enable ? "Modo simulación activado (Lunes 10:00 AM)." : "Modo simulación desactivado (Tiempo real).";
             return RedirectToAction("Dashboard");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GestionSalas(string tab = "all", bool partial = false)
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+            var hoy = DateOnly.FromDateTime(ahora);
+            var horaActual = TimeOnly.FromDateTime(ahora);
+
+            ViewBag.NombreAdministrador = HttpContext.Session.GetString("UsuarioNombre") ?? "Administrador";
+            ViewBag.ActiveTab = tab;
+
+            // 1. Obtener todas las salas ordenadas por piso y nombre
+            var salas = await _context.Salas.Include(s => s.Reservas).AsNoTracking().OrderBy(s => s.Piso).ThenBy(s => s.Id).ToListAsync();
+            ViewBag.Salas = salas;
+
+            // 2. Reservas activas de hoy para cálculo de estado en vivo
+            var reservasHoy = await _context.Reservas
+                .AsNoTracking()
+                .Where(r => r.Fecha == hoy && r.HoraFin >= horaActual && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"))
+                .ToListAsync();
+
+            var horario = _salasService.ObtenerHorarioOperacion(ahora);
+
+            // 3. Métricas KPI de Gestión
+            int totalSalas = salas.Count;
+            int activasCount = salas.Count(s => s.EstadoActual != "I");
+            int inhabilitadasCount = salas.Count(s => s.EstadoActual == "I");
+            
+            // Map de estado actual dinámico por sala
+            var estadosSalasMap = new Dictionary<int, string>();
+            foreach (var sala in salas)
+            {
+                string estado = _salasService.ObtenerEstadoSala(sala, reservasHoy, horaActual, horario);
+                estadosSalasMap[sala.Id] = estado;
+            }
+
+            ViewBag.EstadosSalasMap = estadosSalasMap;
+            ViewBag.KpiTotalSalas = totalSalas;
+            ViewBag.KpiActivas = activasCount;
+            ViewBag.KpiInhabilitadas = inhabilitadasCount;
+
+            if (partial)
+            {
+                return PartialView("_GestionSalasContent");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarSala(string nombre, int piso, string activeTab = "all")
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            if (string.IsNullOrWhiteSpace(nombre) || piso < 1 || piso > 3)
+            {
+                TempData["ErrorMessage"] = "Debes ingresar un nombre de sala válido y seleccionar un piso entre 1 y 3.";
+                return RedirectToAction("GestionSalas", new { tab = activeTab });
+            }
+
+            nombre = nombre.Trim();
+
+            // Verificar duplicados de nombre
+            bool existe = await _context.Salas.AnyAsync(s => s.Nombre.ToLower() == nombre.ToLower());
+            if (existe)
+            {
+                TempData["ErrorMessage"] = $"Ya existe una sala registrada con el nombre '{nombre}'.";
+                return RedirectToAction("GestionSalas", new { tab = activeTab });
+            }
+
+            var nuevaSala = new Sala
+            {
+                Nombre = nombre,
+                Piso = piso,
+                EstadoActual = "D" // Disponible por defecto
+            };
+
+            _context.Salas.Add(nuevaSala);
+            await _context.SaveChangesAsync();
+
+            await _salasService.BroadcastEstadosAsync();
+
+            TempData["SuccessMessage"] = $"La sala '{nombre}' ha sido registrada exitosamente en el Piso {piso}.";
+            return RedirectToAction("GestionSalas", new { tab = activeTab });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleEstadoSala(int salaId, string activeTab = "all")
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var sala = await _context.Salas.FindAsync(salaId);
+            if (sala == null)
+            {
+                TempData["ErrorMessage"] = "La sala especificada no fue encontrada.";
+                return RedirectToAction("GestionSalas", new { tab = activeTab });
+            }
+
+            if (sala.EstadoActual == "I")
+            {
+                sala.EstadoActual = "D"; // Re-activar
+                TempData["SuccessMessage"] = $"La sala '{sala.Nombre}' fue reactivada exitosamente.";
+            }
+            else
+            {
+                sala.EstadoActual = "I"; // Inhabilitar / Desactivar
+                TempData["WarningMessage"] = $"La sala '{sala.Nombre}' ha sido inhabilitada por mantenimiento.";
+            }
+
+            await _context.SaveChangesAsync();
+            await _salasService.BroadcastEstadosAsync();
+
+            return RedirectToAction("GestionSalas", new { tab = activeTab });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarSala(int salaId, string activeTab = "all")
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var sala = await _context.Salas
+                .Include(s => s.Reservas)
+                .FirstOrDefaultAsync(s => s.Id == salaId);
+
+            if (sala == null)
+            {
+                TempData["ErrorMessage"] = "La sala especificada no existe.";
+                return RedirectToAction("GestionSalas", new { tab = activeTab });
+            }
+
+            // Verificar reservas en curso hoy
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+            var hoy = DateOnly.FromDateTime(ahora);
+            var horaActual = TimeOnly.FromDateTime(ahora);
+
+            bool tieneReservasEnUso = sala.Reservas.Any(r => r.Fecha == hoy && r.HoraFin >= horaActual && (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"));
+            if (tieneReservasEnUso)
+            {
+                TempData["ErrorMessage"] = $"No se puede eliminar la sala '{sala.Nombre}' porque actualmente tiene una reserva activa en curso.";
+                return RedirectToAction("GestionSalas", new { tab = activeTab });
+            }
+
+            try
+            {
+                _context.Salas.Remove(sala);
+                await _context.SaveChangesAsync();
+                await _salasService.BroadcastEstadosAsync();
+                TempData["SuccessMessage"] = $"La sala '{sala.Nombre}' ha sido eliminada del sistema.";
+            }
+            catch (DbUpdateException)
+            {
+                _context.Entry(sala).State = EntityState.Unchanged;
+                sala.EstadoActual = "I";
+                await _context.SaveChangesAsync();
+                await _salasService.BroadcastEstadosAsync();
+                TempData["WarningMessage"] = $"La sala '{sala.Nombre}' tiene registros de reservas previas en el historial, por lo que se inhabilitó en su lugar para proteger los reportes.";
+            }
+
+            return RedirectToAction("GestionSalas", new { tab = activeTab });
         }
     }
 }

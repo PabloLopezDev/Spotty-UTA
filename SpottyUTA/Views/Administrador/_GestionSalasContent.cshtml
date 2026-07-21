@@ -1,0 +1,337 @@
+@using SpottyUTA.Models
+@{
+    var salas = ViewBag.Salas as List<Sala> ?? new List<Sala>();
+    var estadosSalasMap = ViewBag.EstadosSalasMap as Dictionary<int, string> ?? new Dictionary<int, string>();
+    
+    int kpiTotal = ViewBag.KpiTotalSalas != null ? (int)ViewBag.KpiTotalSalas : 0;
+    int kpiActivas = ViewBag.KpiActivas != null ? (int)ViewBag.KpiActivas : 0;
+    int kpiInhabilitadas = ViewBag.KpiInhabilitadas != null ? (int)ViewBag.KpiInhabilitadas : 0;
+    
+    var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+
+    var countPiso1 = salas.Count(s => s.Piso == 1);
+    var countPiso2 = salas.Count(s => s.Piso == 2);
+    var countPiso3 = salas.Count(s => s.Piso == 3);
+
+    var activasPiso1 = salas.Count(s => s.Piso == 1 && s.EstadoActual != "I");
+    var activasPiso2 = salas.Count(s => s.Piso == 2 && s.EstadoActual != "I");
+    var activasPiso3 = salas.Count(s => s.Piso == 3 && s.EstadoActual != "I");
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var warningMessage = TempData["WarningMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+<main class="dashboard-content-wrapper" style="grid-template-columns: 1fr; gap: 24px; padding: 32px 36px;">
+
+    <!-- Notification Toasts -->
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #ECFDF5; color: #065F46;" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> @successMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(warningMessage))
+    {
+        <div class="alert alert-warning alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FFFBEB; color: #92400E;" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @warningMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FEF2F2; color: #991B1B;" role="alert">
+            <i class="fa-solid fa-circle-xmark me-2"></i> @errorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Header de Sección -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="fa-solid fa-door-open text-primary me-2"></i>Gestión de Salas
+            </h1>
+            <p class="text-muted mb-0 small">Administra, agrega y controla el estado operativo de los boxes de estudio.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="date-picker-mock shadow-sm me-2">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+            </div>
+            <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-bold shadow-sm" style="border-radius: 10px; font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#modalAgregarSala">
+                <i class="fa-solid fa-plus"></i> Agregar Sala
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Tarjetas KPI de Gestión -->
+    <div class="kpi-grid-4">
+        <!-- KPI 1: Total Salas -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Total Salas Registradas</span>
+                <div class="kpi-icon-wrapper icon-bg-blue">
+                    <i class="fa-solid fa-building text-primary"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value">@kpiTotal</div>
+                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">Boxes de Estudio</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Distribuidas en 3 pisos</div>
+        </div>
+
+        <!-- KPI 2: Salas Activas -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Salas Operativas</span>
+                <div class="kpi-icon-wrapper icon-bg-green">
+                    <i class="fa-solid fa-circle-check text-success"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value text-success">@kpiActivas</div>
+                <span class="text-success fw-semibold" style="font-size: 0.75rem;">
+                    @((kpiTotal > 0 ? (int)Math.Round((double)kpiActivas / kpiTotal * 100) : 0))% activas
+                </span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Disponibles para reserva</div>
+        </div>
+
+        <!-- KPI 3: Inhabilitadas -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Inhabilitadas</span>
+                <div class="kpi-icon-wrapper icon-bg-yellow">
+                    <i class="fa-solid fa-screwdriver-wrench text-warning"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value text-warning">@kpiInhabilitadas</div>
+                <span class="text-secondary" style="font-size: 0.75rem;">En mantenimiento</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Fuera de servicio temporal</div>
+        </div>
+
+        <!-- KPI 4: Pisos Habilitados -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Niveles / Pisos</span>
+                <div class="kpi-icon-wrapper icon-bg-red">
+                    <i class="fa-solid fa-layer-group text-danger"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value">3</div>
+                <span class="badge bg-primary text-white rounded-pill px-2" style="font-size: 0.72rem;">Biblioteca UTA</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Pisos 1, 2 y 3</div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación Directa por Piso -->
+    <div class="reservas-tabs-header">
+        <button type="button" class="reservas-tab-btn active" id="tabGestionPisoAll" onclick="switchGestionPisoTab('all')">
+            <i class="fa-solid fa-border-all"></i> Todas (@kpiTotal)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabGestionPiso1" onclick="switchGestionPisoTab('1')">
+            <i class="fa-solid fa-layer-group"></i> Primer Piso (@countPiso1)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabGestionPiso2" onclick="switchGestionPisoTab('2')">
+            <i class="fa-solid fa-layer-group"></i> Segundo Piso (@countPiso2)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabGestionPiso3" onclick="switchGestionPisoTab('3')">
+            <i class="fa-solid fa-layer-group"></i> Tercer Piso (@countPiso3)
+        </button>
+    </div>
+
+    <!-- Layout 2 Columnas: Grid Principal + Sidebar Guía de Administrador -->
+    <div class="reservas-content-grid">
+        <!-- Columna Izquierda: Buscador + Grid de Tarjetas -->
+        <div>
+            <!-- Barra de Buscador y Estado -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+                    <div class="modern-search-wrapper" style="width: 260px;">
+                        <i class="fa-solid fa-magnifying-glass modern-search-icon"></i>
+                        <input type="text" class="modern-search-input" id="searchSalaInput" placeholder="Buscar sala por nombre..." style="width: 260px;" />
+                    </div>
+
+                    <!-- Select Operatividad -->
+                    <select class="modern-filter-select" id="selectGestionEstado" style="width: 160px;">
+                        <option value="all">Estado: Todos</option>
+                        <option value="activa">Operativas</option>
+                        <option value="inhabilitada">Inhabilitadas</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Grid de Tarjetas de Salas -->
+            <div class="gestion-salas-grid" id="salasGridContainer">
+                @if (!salas.Any())
+                {
+                    <div class="col-12 text-center py-5 text-muted bg-white rounded-4 border">
+                        <i class="fa-regular fa-building mb-2 d-block fs-2 text-secondary"></i>
+                        <h5 class="fw-bold text-dark">No hay salas registradas</h5>
+                        <p class="small text-muted mb-3">Utiliza el botón superior para agregar el primer box de estudio.</p>
+                        <button type="button" class="btn btn-primary btn-sm px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalAgregarSala">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar primera sala
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    foreach (var s in salas)
+                    {
+                        bool isInhabilitada = s.EstadoActual == "I";
+                        string estadoLive = estadosSalasMap.ContainsKey(s.Id) ? estadosSalasMap[s.Id] : s.EstadoActual;
+                        string pisoText = s.Piso == 1 ? "Primer Piso" : s.Piso == 2 ? "Segundo Piso" : "Tercer Piso";
+
+                        string indicatorClass = "indicator-disponible";
+                        string indicatorLabel = "Disponible";
+                        string indicatorIcon = "fa-circle-check";
+
+                        if (isInhabilitada)
+                        {
+                            indicatorClass = "indicator-inhabilitada";
+                            indicatorLabel = "Inhabilitada (Mantenimiento)";
+                            indicatorIcon = "fa-circle-pause";
+                        }
+                        else if (estadoLive == "O")
+                        {
+                            indicatorClass = "indicator-ocupado";
+                            indicatorLabel = "Ocupada actualmente";
+                            indicatorIcon = "fa-user-check";
+                        }
+                        else if (estadoLive == "R")
+                        {
+                            indicatorClass = "indicator-reservado";
+                            indicatorLabel = "Reservada (En espera)";
+                            indicatorIcon = "fa-clock";
+                        }
+
+                        <div class="sala-admin-card @(isInhabilitada ? "card-disabled" : "")" data-piso="@s.Piso" data-nombre="@s.Nombre.ToLower()" data-inhabilitada="@(isInhabilitada ? "true" : "false")">
+                            <div>
+                                <!-- Top Header de la Tarjeta -->
+                                <div class="sala-card-top">
+                                    <div>
+                                        <h3 class="sala-box-name">@s.Nombre</h3>
+                                        <span class="sala-piso-badge">@pisoText</span>
+                                    </div>
+                                    <span class="badge @(isInhabilitada ? "bg-secondary text-white" : "bg-primary-subtle text-primary") rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        ID: #@s.Id
+                                    </span>
+                                </div>
+
+                                <!-- Indicador de Estado en Vivo -->
+                                <div class="sala-status-indicator @indicatorClass">
+                                    <i class="fa-solid @indicatorIcon"></i>
+                                    <span>@indicatorLabel</span>
+                                </div>
+                            </div>
+
+                            <!-- Footer con Switch Toggle de Operatividad y Eliminar -->
+                            <div class="sala-card-actions">
+                                <form asp-controller="Administrador" asp-action="ToggleEstadoSala" method="post" class="toggle-switch-form m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="salaId" value="@s.Id" />
+                                    <input type="hidden" name="activeTab" class="inputActiveTabVal" value="@(ViewBag.ActiveTab ?? "all")" />
+                                    <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                                        <input class="form-check-input modern-switch" type="checkbox" id="switchSala_@s.Id" @(!isInhabilitada ? "checked" : "") onchange="this.form.submit();">
+                                        <label class="form-check-label fw-semibold text-secondary" for="switchSala_@s.Id" style="font-size: 0.78rem;">
+                                            @(!isInhabilitada ? "Habilitada" : "Desactivada")
+                                        </label>
+                                    </div>
+                                </form>
+
+                                <button type="button" class="btn-delete-sala" title="Eliminar Sala" onclick="abrirModalEliminarSala(@s.Id, '@s.Nombre')">
+                                    <i class="fa-solid fa-trash-can" style="font-size: 0.85rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Sidebar Guía para Administradores -->
+        <div class="reservas-sidebar-column">
+            <!-- Card 1: Guía de Control de Boxes -->
+            <div class="sidebar-info-card">
+                <div class="sidebar-info-header">
+                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-sliders text-primary"></i></span>
+                    <span>Guía de administración</span>
+                </div>
+                <div class="guide-card-box guide-box-green">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-toggle-on"></i> Interruptor Habilitado
+                    </div>
+                    <div class="guide-box-desc">El box está activo en el sistema y disponible para reservas de alumnos.</div>
+                </div>
+                <div class="guide-card-box guide-box-yellow">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-toggle-off"></i> Interruptor Desactivado
+                    </div>
+                    <div class="guide-box-desc">Inhabilita el box por mantenimiento o limpieza. Lo oculta a los alumnos.</div>
+                </div>
+                <div class="guide-card-box guide-box-gray">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-plus-circle"></i> Agregar Nueva Sala
+                    </div>
+                    <div class="guide-box-desc">Presiona el botón azul superior para incorporar un nuevo box indicando su piso.</div>
+                </div>
+                <div class="guide-card-box guide-box-red">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar Box
+                    </div>
+                    <div class="guide-box-desc">Remueve la sala del sistema. Solo permitido si no tiene reservas activas en curso.</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Capacidad por Piso -->
+            <div class="sidebar-info-card">
+                <div class="sidebar-info-header">
+                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-chart-pie text-primary"></i></span>
+                    <span>Operatividad por piso</span>
+                </div>
+
+                <!-- Piso 1 -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
+                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Primer Piso</span>
+                        <span class="fw-semibold text-secondary">@activasPiso1 / @countPiso1 operativas</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso1 > 0 ? (int)Math.Round((double)activasPiso1 / countPiso1 * 100) : 0)%;"></div>
+                    </div>
+                </div>
+
+                <!-- Piso 2 -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
+                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Segundo Piso</span>
+                        <span class="fw-semibold text-secondary">@activasPiso2 / @countPiso2 operativas</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso2 > 0 ? (int)Math.Round((double)activasPiso2 / countPiso2 * 100) : 0)%;"></div>
+                    </div>
+                </div>
+
+                <!-- Piso 3 -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
+                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Tercer Piso</span>
+                        <span class="fw-semibold text-secondary">@activasPiso3 / @countPiso3 operativas</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso3 > 0 ? (int)Math.Round((double)activasPiso3 / countPiso3 * 100) : 0)%;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</main>
