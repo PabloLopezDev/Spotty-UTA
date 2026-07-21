@@ -30,17 +30,18 @@
     <!-- Panel Central (Resumen, KPIs, Tabla) -->
     <div class="dashboard-center-panel">
 
-        <!-- Welcome Row -->
-        <div class="welcome-header-row">
-            <div class="welcome-title-group">
-                <h2>¡Buenos días, @nombreAdmin! 👋</h2>
-                <p>Aquí tienes un resumen general del sistema.</p>
+        <!-- Header de Panel de Control -->
+        <div class="welcome-header-row justify-content-between mb-4">
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-0 d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-chart-pie text-primary"></i>
+                    <span>Panel de Control</span>
+                </h1>
             </div>
             
             <div class="date-picker-mock shadow-sm">
                 <i class="fa-regular fa-calendar-days"></i>
                 <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
-                <i class="fa-solid fa-chevron-down ms-1" style="font-size:0.75rem;"></i>
             </div>
         </div>
 

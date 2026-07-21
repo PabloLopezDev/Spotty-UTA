@@ -1556,7 +1556,7 @@ body.admin-body {
 /* Layout 2 Columnas (Lista + Sidebar Derecho) */
 .reservas-content-grid {
     display: grid !important;
-    grid-template-columns: 1fr 280px !important;
+    grid-template-columns: 1fr !important;
     gap: 20px !important;
     align-items: start !important;
 }
@@ -1954,8 +1954,8 @@ body.admin-body {
    ========================================== */
 .gestion-salas-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-    gap: 20px !important;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 24px !important;
     margin-top: 20px !important;
 }
 

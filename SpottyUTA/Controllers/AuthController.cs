@@ -72,7 +72,6 @@ namespace SpottyUTA.Controllers
             HttpContext.Session.SetString("UsuarioRol", usuario.Rol);
             HttpContext.Session.SetString("UsuarioNombre", usuario.NombreCompleto);
 
-            TempData["SuccessMessage"] = $"¡Bienvenido {usuario.NombreCompleto}!";
             return RedirectToAction("Index", "Home");
         }
 

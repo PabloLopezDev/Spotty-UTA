@@ -24,34 +24,38 @@
 
 <main class="dashboard-content-wrapper" style="grid-template-columns: 1fr; gap: 24px; padding: 32px 36px;">
 
-    <!-- Notification Toasts -->
-    @if (!string.IsNullOrEmpty(successMessage))
+    <!-- Modal Centrado de Notificación / Confirmación -->
+    @if (!string.IsNullOrEmpty(successMessage) || !string.IsNullOrEmpty(warningMessage) || !string.IsNullOrEmpty(errorMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #ECFDF5; color: #065F46;" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i> @successMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (!string.IsNullOrEmpty(warningMessage))
-    {
-        <div class="alert alert-warning alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FFFBEB; color: #92400E;" role="alert">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i> @warningMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FEF2F2; color: #991B1B;" role="alert">
-            <i class="fa-solid fa-circle-xmark me-2"></i> @errorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        string notifTitle = !string.IsNullOrEmpty(successMessage) ? "Operación Exitosa" : !string.IsNullOrEmpty(warningMessage) ? "Advertencia del Sistema" : "Error en Operación";
+        string notifIcon = !string.IsNullOrEmpty(successMessage) ? "fa-circle-check text-success" : !string.IsNullOrEmpty(warningMessage) ? "fa-triangle-exclamation text-warning" : "fa-circle-xmark text-danger";
+        string notifMsg = (successMessage ?? warningMessage ?? errorMessage) ?? "";
+        string iconBg = !string.IsNullOrEmpty(successMessage) ? "#ECFDF5" : !string.IsNullOrEmpty(warningMessage) ? "#FFFBEB" : "#FEF2F2";
+
+        <div class="modal fade show d-block" id="modalNotificacionNotif" tabindex="-1" aria-hidden="true" style="background-color: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 18px; background-color: @iconBg;">
+                        <i class="fa-solid @notifIcon fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">@notifTitle</h5>
+                    <p class="text-secondary small mb-4" style="font-size: 0.88rem; line-height: 1.5;">@notifMsg</p>
+                    <div>
+                        <button type="button" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius: 12px; font-size: 0.88rem;" onclick="this.closest('.modal').remove();">
+                            Entendido / Aceptar
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     }
 
     <!-- Header de Sección -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">
-                <i class="fa-solid fa-door-open text-primary me-2"></i>Gestión de Salas
+            <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-3">
+                <i class="fa-solid fa-door-open text-primary"></i>
+                <span>Gestión de Salas</span>
             </h1>
             <p class="text-muted mb-0 small">Administra, agrega y controla el estado operativo de los boxes de estudio.</p>
         </div>
@@ -60,6 +64,9 @@
                 <i class="fa-regular fa-calendar-days"></i>
                 <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
             </div>
+            <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-bold shadow-sm me-1" style="border-radius: 10px; font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#modalGuiaGestionSalas">
+                <i class="fa-solid fa-circle-info"></i> Guía y Operatividad
+            </button>
             <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-bold shadow-sm" style="border-radius: 10px; font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#modalAgregarSala">
                 <i class="fa-solid fa-plus"></i> Agregar Sala
             </button>
@@ -103,38 +110,38 @@
         <!-- KPI 3: Inhabilitadas -->
         <div class="kpi-card">
             <div class="kpi-card-header">
-                <span class="kpi-title">Inhabilitadas</span>
-                <div class="kpi-icon-wrapper icon-bg-yellow">
-                    <i class="fa-solid fa-screwdriver-wrench text-warning"></i>
+                <span class="kpi-title">Salas Inhabilitadas</span>
+                <div class="kpi-icon-wrapper icon-bg-red">
+                    <i class="fa-solid fa-power-off text-danger"></i>
                 </div>
             </div>
             <div class="d-flex align-items-baseline justify-content-between">
-                <div class="kpi-value text-warning">@kpiInhabilitadas</div>
-                <span class="text-secondary" style="font-size: 0.75rem;">En mantenimiento</span>
+                <div class="kpi-value text-danger">@kpiInhabilitadas</div>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.72rem;">Mantenimiento</span>
             </div>
-            <div class="kpi-subtext text-muted mt-2">Fuera de servicio temporal</div>
+            <div class="kpi-subtext text-muted mt-2">Ocultas para estudiantes</div>
         </div>
 
-        <!-- KPI 4: Pisos Habilitados -->
+        <!-- KPI 4: Distribución por Piso -->
         <div class="kpi-card">
             <div class="kpi-card-header">
-                <span class="kpi-title">Niveles / Pisos</span>
-                <div class="kpi-icon-wrapper icon-bg-red">
-                    <i class="fa-solid fa-layer-group text-danger"></i>
+                <span class="kpi-title">Salas por Piso</span>
+                <div class="kpi-icon-wrapper icon-bg-yellow">
+                    <i class="fa-solid fa-layer-group text-warning"></i>
                 </div>
             </div>
             <div class="d-flex align-items-baseline justify-content-between">
-                <div class="kpi-value">3</div>
-                <span class="badge bg-primary text-white rounded-pill px-2" style="font-size: 0.72rem;">Biblioteca UTA</span>
+                <div class="kpi-value">3 Pisos</div>
+                <span class="text-muted fw-semibold" style="font-size: 0.75rem;">P1: @countPiso1 | P2: @countPiso2 | P3: @countPiso3</span>
             </div>
-            <div class="kpi-subtext text-muted mt-2">Pisos 1, 2 y 3</div>
+            <div class="kpi-subtext text-muted mt-2">Edificio Biblioteca UTA</div>
         </div>
     </div>
 
-    <!-- Pestañas de Navegación Directa por Piso -->
+    <!-- Pestañas de Navegación por Piso -->
     <div class="reservas-tabs-header">
         <button type="button" class="reservas-tab-btn active" id="tabGestionPisoAll" onclick="switchGestionPisoTab('all')">
-            <i class="fa-solid fa-border-all"></i> Todas (@kpiTotal)
+            <i class="fa-solid fa-border-all"></i> Todas las Salas (@kpiTotal)
         </button>
         <button type="button" class="reservas-tab-btn" id="tabGestionPiso1" onclick="switchGestionPisoTab('1')">
             <i class="fa-solid fa-layer-group"></i> Primer Piso (@countPiso1)
@@ -147,190 +154,85 @@
         </button>
     </div>
 
-    <!-- Layout 2 Columnas: Grid Principal + Sidebar Guía de Administrador -->
-    <div class="reservas-content-grid">
-        <!-- Columna Izquierda: Buscador + Grid de Tarjetas -->
-        <div>
-            <!-- Barra de Buscador y Estado -->
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
-                    <div class="modern-search-wrapper" style="width: 260px;">
-                        <i class="fa-solid fa-magnifying-glass modern-search-icon"></i>
-                        <input type="text" class="modern-search-input" id="searchSalaInput" placeholder="Buscar sala por nombre..." style="width: 260px;" />
-                    </div>
-
-                    <!-- Select Operatividad -->
-                    <select class="modern-filter-select" id="selectGestionEstado" style="width: 160px;">
-                        <option value="all">Estado: Todos</option>
-                        <option value="activa">Operativas</option>
-                        <option value="inhabilitada">Inhabilitadas</option>
-                    </select>
+    <!-- Panel de Ancho Completo (1 Column) -->
+    <div class="admin-panel-card m-0 p-3">
+        <!-- Buscador + Filtro de Operatividad -->
+        <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="modern-search-wrapper" style="width: 320px;">
+                    <i class="fa-solid fa-magnifying-glass modern-search-icon"></i>
+                    <input type="text" class="modern-search-input" id="searchSalaInput" placeholder="Buscar sala por nombre (Ej: Box 1)..." style="width: 320px;" />
                 </div>
+                <select class="form-select rounded-3 py-1.5 border" id="selectGestionEstado" style="width: 180px; font-size: 0.85rem;" onchange="filtrarSalasEnCliente()">
+                    <option value="all">Todos los estados</option>
+                    <option value="activa">Operativas (Habilitadas)</option>
+                    <option value="inhabilitada">Inhabilitadas</option>
+                </select>
             </div>
+            <span class="text-muted small fw-semibold" id="salasResultCountText">Mostrando todas las salas</span>
+        </div>
 
-            <!-- Grid de Tarjetas de Salas -->
-            <div class="gestion-salas-grid" id="salasGridContainer">
-                @if (!salas.Any())
+        <!-- Grid de Tarjetas de Salas (Full Width) -->
+        <div class="gestion-salas-grid" id="salasGrid">
+            @if (!salas.Any())
+            {
+                <div class="text-center py-5 text-muted w-100 grid-span-full">
+                    <i class="fa-solid fa-door-closed d-block fs-3 mb-2 opacity-50"></i>
+                    <span>No hay salas creadas en el sistema. Presiona "Agregar Sala" para crear una.</span>
+                </div>
+            }
+            else
+            {
+                foreach (var s in salas)
                 {
-                    <div class="col-12 text-center py-5 text-muted bg-white rounded-4 border">
-                        <i class="fa-regular fa-building mb-2 d-block fs-2 text-secondary"></i>
-                        <h5 class="fw-bold text-dark">No hay salas registradas</h5>
-                        <p class="small text-muted mb-3">Utiliza el botón superior para agregar el primer box de estudio.</p>
-                        <button type="button" class="btn btn-primary btn-sm px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalAgregarSala">
-                            <i class="fa-solid fa-plus me-1"></i> Agregar primera sala
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    foreach (var s in salas)
-                    {
-                        bool isInhabilitada = s.EstadoActual == "I";
-                        string estadoLive = estadosSalasMap.ContainsKey(s.Id) ? estadosSalasMap[s.Id] : s.EstadoActual;
-                        string pisoText = s.Piso == 1 ? "Primer Piso" : s.Piso == 2 ? "Segundo Piso" : "Tercer Piso";
+                    string estadoEnLiveMap = estadosSalasMap.ContainsKey(s.Id) ? estadosSalasMap[s.Id] : "D";
+                    bool isInhabilitada = s.EstadoActual == "I";
 
-                        string indicatorClass = "indicator-disponible";
-                        string indicatorLabel = "Disponible";
-                        string indicatorIcon = "fa-circle-check";
+                    string liveStatusBadgeClass = isInhabilitada ? "bg-secondary text-white" :
+                                                    estadoEnLiveMap == "O" ? "bg-danger text-white" :
+                                                    estadoEnLiveMap == "R" ? "bg-warning text-dark" : "bg-success text-white";
 
-                        if (isInhabilitada)
-                        {
-                            indicatorClass = "indicator-inhabilitada";
-                            indicatorLabel = "Inhabilitada (Mantenimiento)";
-                            indicatorIcon = "fa-circle-pause";
-                        }
-                        else if (estadoLive == "O")
-                        {
-                            indicatorClass = "indicator-ocupado";
-                            indicatorLabel = "Ocupada actualmente";
-                            indicatorIcon = "fa-user-check";
-                        }
-                        else if (estadoLive == "R")
-                        {
-                            indicatorClass = "indicator-reservado";
-                            indicatorLabel = "Reservada (En espera)";
-                            indicatorIcon = "fa-clock";
-                        }
+                    string liveStatusText = isInhabilitada ? "Inhabilitada" :
+                                            estadoEnLiveMap == "O" ? "Ocupada Ahora" :
+                                            estadoEnLiveMap == "R" ? "Reservada Hoy" : "Disponible";
 
-                        <div class="sala-admin-card @(isInhabilitada ? "card-disabled" : "")" data-piso="@s.Piso" data-nombre="@s.Nombre.ToLower()" data-inhabilitada="@(isInhabilitada ? "true" : "false")">
+                    <div class="sala-admin-card p-4 border rounded-4 shadow-sm bg-white" data-nombre="@s.Nombre.ToLower()" data-piso="@s.Piso" data-estado-db="@s.EstadoActual" data-estado-live="@estadoEnLiveMap">
+                        <div class="d-flex align-items-start justify-content-between mb-3">
                             <div>
-                                <!-- Top Header de la Tarjeta -->
-                                <div class="sala-card-top">
-                                    <div>
-                                        <h3 class="sala-box-name">@s.Nombre</h3>
-                                        <span class="sala-piso-badge">@pisoText</span>
-                                    </div>
-                                    <span class="badge @(isInhabilitada ? "bg-secondary text-white" : "bg-primary-subtle text-primary") rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
-                                        ID: #@s.Id
-                                    </span>
-                                </div>
-
-                                <!-- Indicador de Estado en Vivo -->
-                                <div class="sala-status-indicator @indicatorClass">
-                                    <i class="fa-solid @indicatorIcon"></i>
-                                    <span>@indicatorLabel</span>
-                                </div>
+                                <h3 class="fw-bold text-dark mb-1" style="font-size: 1.2rem;">@s.Nombre</h3>
+                                <span class="badge bg-light text-secondary border px-2.5 py-1" style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-layer-group text-primary me-1"></i>Piso @s.Piso
+                                </span>
                             </div>
+                            <span class="badge @liveStatusBadgeClass px-3 py-1.5 rounded-pill shadow-sm" style="font-size: 0.78rem; font-weight: 600;">
+                                @liveStatusText
+                            </span>
+                        </div>
 
-                            <!-- Footer con Switch Toggle de Operatividad y Eliminar -->
-                            <div class="sala-card-actions">
-                                <form asp-controller="Administrador" asp-action="ToggleEstadoSala" method="post" class="toggle-switch-form m-0">
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 my-3" style="background-color: #F8FAFC; border: 1px solid #E2E8F0;">
+                            <span class="text-secondary small fw-semibold">Operatividad:</span>
+                            <div class="form-check form-switch modern-switch m-0 p-0 d-flex align-items-center gap-2">
+                                <form asp-controller="Administrador" asp-action="ToggleEstadoSala" method="post" id="formToggleSala_@s.Id" class="m-0">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="salaId" value="@s.Id" />
                                     <input type="hidden" name="activeTab" class="inputActiveTabVal" value="@(ViewBag.ActiveTab ?? "all")" />
-                                    <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
-                                        <input class="form-check-input modern-switch" type="checkbox" id="switchSala_@s.Id" @(!isInhabilitada ? "checked" : "") onchange="this.form.submit();">
-                                        <label class="form-check-label fw-semibold text-secondary" for="switchSala_@s.Id" style="font-size: 0.78rem;">
-                                            @(!isInhabilitada ? "Habilitada" : "Desactivada")
-                                        </label>
-                                    </div>
+                                    <input class="form-check-input ms-0" type="checkbox" role="switch" id="switchSala_@s.Id" @(!isInhabilitada ? "checked" : "") onchange="document.getElementById('formToggleSala_@s.Id').submit();">
                                 </form>
-
-                                <button type="button" class="btn-delete-sala" title="Eliminar Sala" onclick="abrirModalEliminarSala(@s.Id, '@s.Nombre')">
-                                    <i class="fa-solid fa-trash-can" style="font-size: 0.85rem;"></i>
-                                </button>
+                                <label class="form-check-label fw-bold small @(!isInhabilitada ? "text-success" : "text-secondary")" for="switchSala_@s.Id" style="cursor: pointer;">
+                                    @(!isInhabilitada ? "Habilitado" : "Desactivado")
+                                </label>
                             </div>
                         </div>
-                    }
+
+                        <div class="pt-1">
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 py-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-2" style="border-radius: 10px; font-size: 0.82rem;" onclick="abrirModalEliminarSala(@s.Id, '@s.Nombre')">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>Eliminar Box</span>
+                            </button>
+                        </div>
+                    </div>
                 }
-            </div>
-        </div>
-
-        <!-- Columna Derecha: Sidebar Guía para Administradores -->
-        <div class="reservas-sidebar-column">
-            <!-- Card 1: Guía de Control de Boxes -->
-            <div class="sidebar-info-card">
-                <div class="sidebar-info-header">
-                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-sliders text-primary"></i></span>
-                    <span>Guía de administración</span>
-                </div>
-                <div class="guide-card-box guide-box-green">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-toggle-on"></i> Interruptor Habilitado
-                    </div>
-                    <div class="guide-box-desc">El box está activo en el sistema y disponible para reservas de alumnos.</div>
-                </div>
-                <div class="guide-card-box guide-box-yellow">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-toggle-off"></i> Interruptor Desactivado
-                    </div>
-                    <div class="guide-box-desc">Inhabilita el box por mantenimiento o limpieza. Lo oculta a los alumnos.</div>
-                </div>
-                <div class="guide-card-box guide-box-gray">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-plus-circle"></i> Agregar Nueva Sala
-                    </div>
-                    <div class="guide-box-desc">Presiona el botón azul superior para incorporar un nuevo box indicando su piso.</div>
-                </div>
-                <div class="guide-card-box guide-box-red">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-trash-can"></i> Eliminar Box
-                    </div>
-                    <div class="guide-box-desc">Remueve la sala del sistema. Solo permitido si no tiene reservas activas en curso.</div>
-                </div>
-            </div>
-
-            <!-- Card 2: Capacidad por Piso -->
-            <div class="sidebar-info-card">
-                <div class="sidebar-info-header">
-                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-chart-pie text-primary"></i></span>
-                    <span>Operatividad por piso</span>
-                </div>
-
-                <!-- Piso 1 -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
-                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Primer Piso</span>
-                        <span class="fw-semibold text-secondary">@activasPiso1 / @countPiso1 operativas</span>
-                    </div>
-                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso1 > 0 ? (int)Math.Round((double)activasPiso1 / countPiso1 * 100) : 0)%;"></div>
-                    </div>
-                </div>
-
-                <!-- Piso 2 -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
-                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Segundo Piso</span>
-                        <span class="fw-semibold text-secondary">@activasPiso2 / @countPiso2 operativas</span>
-                    </div>
-                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso2 > 0 ? (int)Math.Round((double)activasPiso2 / countPiso2 * 100) : 0)%;"></div>
-                    </div>
-                </div>
-
-                <!-- Piso 3 -->
-                <div>
-                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.78rem;">
-                        <span class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-1"></i> Tercer Piso</span>
-                        <span class="fw-semibold text-secondary">@activasPiso3 / @countPiso3 operativas</span>
-                    </div>
-                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #E2E8F0;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: @(countPiso3 > 0 ? (int)Math.Round((double)activasPiso3 / countPiso3 * 100) : 0)%;"></div>
-                    </div>
-                </div>
-
-            </div>
+            }
         </div>
     </div>
 

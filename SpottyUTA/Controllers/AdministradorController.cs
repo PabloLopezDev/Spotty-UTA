@@ -392,5 +392,101 @@ namespace SpottyUTA.Controllers
 
             return RedirectToAction("GestionSalas", new { tab = activeTab });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Usuarios(string tab = "all", bool partial = false)
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            ViewBag.NombreAdministrador = HttpContext.Session.GetString("UsuarioNombre") ?? "Administrador";
+            ViewBag.ActiveTab = tab;
+
+            // 1. Obtener todos los usuarios ordenados por nombre con sus reservas
+            var usuarios = await _context.Usuarios
+                .Include(u => u.Reservas)
+                .AsNoTracking()
+                .OrderBy(u => u.NombreCompleto)
+                .ToListAsync();
+
+            ViewBag.Usuarios = usuarios;
+
+            // 2. Métricas KPI de Usuarios
+            int totalUsuarios = usuarios.Count;
+            int habilitadosCount = usuarios.Count(u => !u.EstaBloqueado);
+            int bloqueadosCount = usuarios.Count(u => u.EstaBloqueado);
+            int enRiesgoCount = usuarios.Count(u => !u.EstaBloqueado && u.ContadorInasistencias > 0);
+
+            ViewBag.KpiTotalUsuarios = totalUsuarios;
+            ViewBag.KpiHabilitados = habilitadosCount;
+            ViewBag.KpiBloqueados = bloqueadosCount;
+            ViewBag.KpiEnRiesgo = enRiesgoCount;
+
+            if (partial)
+            {
+                return PartialView("_UsuariosContent");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleBloqueoUsuario(int usuarioId, string activeTab = "all")
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+            {
+                TempData["ErrorMessage"] = "El usuario especificado no existe.";
+                return RedirectToAction("Usuarios", new { tab = activeTab });
+            }
+
+            if (usuario.EstaBloqueado)
+            {
+                usuario.EstaBloqueado = false;
+                TempData["SuccessMessage"] = $"El usuario '{usuario.NombreCompleto}' fue desbloqueado y habilitado exitosamente.";
+            }
+            else
+            {
+                usuario.EstaBloqueado = true;
+                TempData["WarningMessage"] = $"El usuario '{usuario.NombreCompleto}' ha sido bloqueado manualmente.";
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Usuarios", new { tab = activeTab });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReiniciarInasistencias(int usuarioId, string activeTab = "all")
+        {
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol != "Administrador")
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+            {
+                TempData["ErrorMessage"] = "El usuario especificado no existe.";
+                return RedirectToAction("Usuarios", new { tab = activeTab });
+            }
+
+            usuario.ContadorInasistencias = 0;
+            usuario.EstaBloqueado = false;
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"El historial de inasistencias de '{usuario.NombreCompleto}' ha sido reiniciado a 0 y su acceso restablecido.";
+            return RedirectToAction("Usuarios", new { tab = activeTab });
+        }
     }
 }

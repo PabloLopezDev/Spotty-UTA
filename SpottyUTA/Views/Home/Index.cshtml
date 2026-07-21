@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SpottyUTA.Models.Sala>
+@model IEnumerable<SpottyUTA.Models.Sala>
 
 @{
     ViewData["Title"] = "Panel de Salas - Spotty UTA";
@@ -29,7 +29,7 @@
         @if (usuarioRol != null)
         {
             <div class="d-flex align-items-center gap-3">
-                <span class="small fw-medium text-white">👋 Hola, @usuarioNombre</span>
+                <span class="small fw-medium text-white">Hola, @usuarioNombre</span>
                 <span class="badge border-0" style="background-color: @(usuarioRol == "Administrador" ? "#e63946" : "#2a9d8f"); font-size: 0.68rem; font-weight: 700; padding: 5px 8px; border-radius: 4px;">
                     @usuarioRol.ToUpper()
                 </span>

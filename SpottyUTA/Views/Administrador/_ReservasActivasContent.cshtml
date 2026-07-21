@@ -23,42 +23,49 @@
 
 <main class="dashboard-content-wrapper" style="grid-template-columns: 1fr; gap: 24px; padding: 32px 36px;">
 
-<!-- Notification Toasts -->
-@if (!string.IsNullOrEmpty(successMessage))
+<!-- Modal Centrado de Notificación / Confirmación -->
+@if (!string.IsNullOrEmpty(successMessage) || !string.IsNullOrEmpty(warningMessage) || !string.IsNullOrEmpty(errorMessage))
 {
-    <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #ECFDF5; color: #065F46;" role="alert">
-        <i class="fa-solid fa-circle-check me-2"></i> @successMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (!string.IsNullOrEmpty(warningMessage))
-{
-    <div class="alert alert-warning alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FFFBEB; color: #92400E;" role="alert">
-        <i class="fa-solid fa-triangle-exclamation me-2"></i> @warningMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FEF2F2; color: #991B1B;" role="alert">
-        <i class="fa-solid fa-circle-xmark me-2"></i> @errorMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    string notifTitle = !string.IsNullOrEmpty(successMessage) ? "Operación Exitosa" : !string.IsNullOrEmpty(warningMessage) ? "Advertencia del Sistema" : "Error en Operación";
+    string notifIcon = !string.IsNullOrEmpty(successMessage) ? "fa-circle-check text-success" : !string.IsNullOrEmpty(warningMessage) ? "fa-triangle-exclamation text-warning" : "fa-circle-xmark text-danger";
+    string notifMsg = (successMessage ?? warningMessage ?? errorMessage) ?? "";
+    string iconBg = !string.IsNullOrEmpty(successMessage) ? "#ECFDF5" : !string.IsNullOrEmpty(warningMessage) ? "#FFFBEB" : "#FEF2F2";
+
+    <div class="modal fade show d-block" id="modalNotificacionNotif" tabindex="-1" aria-hidden="true" style="background-color: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 18px; background-color: @iconBg;">
+                    <i class="fa-solid @notifIcon fs-2"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">@notifTitle</h5>
+                <p class="text-secondary small mb-4" style="font-size: 0.88rem; line-height: 1.5;">@notifMsg</p>
+                <div>
+                    <button type="button" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius: 12px; font-size: 0.88rem;" onclick="this.closest('.modal').remove();">
+                        Entendido / Aceptar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
 <!-- Header de Sección -->
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h1 class="h3 fw-bold text-dark mb-1">
-            <i class="fa-regular fa-calendar-check text-primary me-2"></i>Reservas Activas
+        <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-3">
+            <i class="fa-regular fa-calendar-check text-primary"></i>
+            <span>Reservas Activas</span>
         </h1>
         <p class="text-muted mb-0 small">Administra y controla en tiempo real todas las salas reservadas.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <div class="date-picker-mock shadow-sm">
+        <div class="date-picker-mock shadow-sm me-2">
             <i class="fa-regular fa-calendar-days"></i>
             <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
         </div>
+        <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-bold shadow-sm" style="border-radius: 10px; font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#modalGuiaReservasActivas">
+            <i class="fa-solid fa-circle-info"></i> Guía y Leyenda
+        </button>
     </div>
 </div>
 
@@ -184,9 +191,9 @@
         </div>
     </div>
 
-    <!-- Layout 2 Columnas (Tabla Principal + Sidebar Guía) -->
-    <div class="reservas-content-grid">
-        <!-- Columna Izquierda: Tabla -->
+    <!-- Layout Ancho Completo (1 Column) -->
+    <div class="reservas-content-grid" style="grid-template-columns: 1fr;">
+        <!-- Tabla Principal -->
         <div class="admin-panel-card m-0">
             <div class="premium-data-table-wrapper">
                 <table class="premium-data-table">
@@ -225,94 +232,79 @@
                                     <td>
                                         <div class="table-user-cell">
                                             <div class="table-user-avatar">
-                                                @{
-                                                    var userInitials = "";
-                                                    if (r.Usuario.NombreCompleto.Contains(" "))
-                                                    {
-                                                        var parts = r.Usuario.NombreCompleto.Split(' ');
-                                                        userInitials = (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
-                                                    }
-                                                    else if (r.Usuario.NombreCompleto.Length > 0)
-                                                    {
-                                                        userInitials = r.Usuario.NombreCompleto.Substring(0, Math.Min(2, r.Usuario.NombreCompleto.Length)).ToUpper();
-                                                    }
-                                                }
-                                                @userInitials
+                                                @(r.Usuario.NombreCompleto.Length >= 2 ? r.Usuario.NombreCompleto.Substring(0, 2).ToUpper() : "US")
                                             </div>
                                             <div class="table-user-info-text">
                                                 <span class="table-user-name">@r.Usuario.NombreCompleto</span>
-                                                <span class="table-user-sub">@r.Usuario.CorreoUta</span>
+                                                <span class="table-user-sub">ID: #@r.UsuarioId</span>
                                             </div>
                                         </div>
                                     </td>
-
                                     <!-- Sala -->
-                                    <td>
-                                        <div class="fw-semibold text-dark">@r.Sala.Nombre</div>
-                                        <div class="text-muted" style="font-size: 0.72rem;">Box de Estudio</div>
-                                    </td>
-
+                                    <td class="fw-semibold text-dark">@r.Sala.Nombre</td>
                                     <!-- Piso -->
-                                    <td class="text-secondary" style="font-size: 0.8rem;">@pisoNombre</td>
-
+                                    <td>
+                                        <span class="badge bg-light text-secondary border px-2.5 py-1.5" style="font-size:0.75rem;">
+                                            <i class="fa-solid fa-layer-group text-primary me-1"></i>@pisoNombre
+                                        </span>
+                                    </td>
                                     <!-- Horario -->
-                                    <td class="fw-medium">@r.HoraInicio.ToString("HH:mm") - @r.HoraFin.ToString("HH:mm")</td>
-
-                                    <!-- Estado Badge -->
+                                    <td class="text-secondary small fw-semibold">
+                                        <i class="fa-regular fa-clock me-1"></i>@r.HoraInicio.ToString("HH:mm") - @r.HoraFin.ToString("HH:mm")
+                                    </td>
+                                    <!-- Estado -->
                                     <td>
                                         @if (isOcupado)
                                         {
-                                            <span class="status-pill-badge badge-ocupado"><i class="fa-solid fa-circle me-1" style="font-size: 0.45rem;"></i>Ocupado</span>
+                                            <span class="status-pill-badge badge-ocupado">Ocupado</span>
                                         }
                                         else
                                         {
-                                            <span class="status-pill-badge badge-reservado"><i class="fa-solid fa-circle me-1" style="font-size: 0.45rem;"></i>Reservado</span>
+                                            <span class="status-pill-badge badge-reservado">Reservado</span>
                                         }
                                     </td>
-
-                                    <!-- Tiempo Restante + Progress Bar -->
+                                    <!-- Tiempo Restante -->
                                     <td>
-                                        @if (rest.TotalMinutes <= 0)
+                                        @if (rest.TotalMinutes > 0)
                                         {
-                                            <span class="text-secondary">-</span>
+                                            string timeFormatted = rest.Hours > 0 ? $"{rest.Hours}h {rest.Minutes}m" : $"{rest.Minutes}m";
+                                            <span class="@(rest.TotalMinutes <= 15 ? "time-remaining-red" : "text-muted small fw-semibold")">
+                                                <i class="fa-solid fa-hourglass-half me-1"></i>@timeFormatted restantes
+                                            </span>
                                         }
                                         else
                                         {
-                                            <div class="fw-semibold text-dark" style="font-size: 0.8rem;">
-                                                @(rest.Hours > 0 ? $"{rest.Hours} h {rest.Minutes} min" : $"{rest.Minutes} min")
-                                            </div>
-                                            <div class="progress mt-1" style="height: 4px; width: 80px; background-color: #E2E8F0;">
-                                                <div class="progress-bar @(isOcupado ? "bg-danger" : "bg-warning")" role="progressbar" style="width: @Math.Min(100, Math.Max(15, (int)(rest.TotalMinutes / 60.0 * 100)))%;"></div>
-                                            </div>
+                                            <span class="text-danger small fw-bold">Tiempo Agotado</span>
                                         }
                                     </td>
-
-                                    <!-- Acciones Directas -->
+                                    <!-- Acciones -->
                                     <td>
-                                        <div class="table-inline-actions">
+                                        <div class="d-flex align-items-center gap-1">
                                             @if (!isOcupado)
                                             {
                                                 <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="reservaId" value="@r.Id" />
                                                     <input type="hidden" name="accion" value="ocupar" />
-                                                    <button type="submit" class="btn-action-icon text-success" title="Marcar Ocupado / Presente">
+                                                    <button type="submit" class="btn-action-icon text-success" title="Marcar como Ocupado">
                                                         <i class="fa-solid fa-circle-check"></i>
                                                     </button>
                                                 </form>
-                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas cancelar esta reserva sin sancionar al estudiante? (Útil si se cancelaron clases o hubo un imprevisto).');">
+
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Seguro que deseas liberar la sala sin sancionar al alumno?');">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="reservaId" value="@r.Id" />
                                                     <input type="hidden" name="accion" value="liberar" />
-                                                    <button type="submit" class="btn-action-icon text-warning" title="Cancelar sin Sanción (Sin Falta)">
+                                                    <button type="submit" class="btn-action-icon text-warning" title="Cancelar sin Sanción">
                                                         <i class="fa-solid fa-ban"></i>
                                                     </button>
                                                 </form>
-                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Seguro que deseas marcar la inasistencia? Esto sumará una falta al estudiante.');">
+
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Aplicar inasistencia/falta al estudiante por no presentarse?');">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="reservaId" value="@r.Id" />
                                                     <input type="hidden" name="accion" value="falta" />
-                                                    <button type="submit" class="btn-action-icon text-danger" title="Marcar Falta / Inasistencia">
+                                                    <button type="submit" class="btn-action-icon text-danger" title="Marcar Falta">
                                                         <i class="fa-solid fa-user-xmark"></i>
                                                     </button>
                                                 </form>
@@ -344,67 +336,6 @@
                     <button type="button" class="btn-pagination-item" id="btnPagePrev" disabled><i class="fa-solid fa-chevron-left" style="font-size:0.75rem;"></i></button>
                     <button type="button" class="btn-pagination-item active" id="btnPageNum">1</button>
                     <button type="button" class="btn-pagination-item" id="btnPageNext" disabled><i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Columna Derecha: Sidebar de Guías (Coincidente con Figma) -->
-        <div class="reservas-sidebar-column">
-            <!-- Card 1: Acciones Rápidas -->
-            <div class="sidebar-info-card">
-                <div class="sidebar-info-header">
-                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-bolt text-primary"></i></span>
-                    <span>Acciones rápidas</span>
-                </div>
-                <div class="guide-card-box guide-box-green">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-circle-check"></i> Marcar Ocupado
-                    </div>
-                    <div class="guide-box-desc">El alumno llegó al mesón y se confirma el uso del box.</div>
-                </div>
-                <div class="guide-card-box guide-box-yellow">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-ban"></i> Cancelar sin Sanción
-                    </div>
-                    <div class="guide-box-desc">Anula la reserva por imprevisto o suspensión de clases sin penalizar al alumno.</div>
-                </div>
-                <div class="guide-card-box guide-box-red">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-user-xmark"></i> Marcar Falta
-                    </div>
-                    <div class="guide-box-desc">Transcurrieron los 20 minutos sin presencia. Libera la sala y aplica falta.</div>
-                </div>
-            </div>
-
-            <!-- Card 2: Leyenda de Estados -->
-            <div class="sidebar-info-card">
-                <div class="sidebar-info-header">
-                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-circle-info text-primary"></i></span>
-                    <span>Leyenda de estados</span>
-                </div>
-                <div class="guide-card-box guide-box-green">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-square"></i> Disponible
-                    </div>
-                    <div class="guide-box-desc">La sala está libre y puede ser reservada inmediatamente.</div>
-                </div>
-                <div class="guide-card-box guide-box-yellow">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-square"></i> Reservado
-                    </div>
-                    <div class="guide-box-desc">Sala reservada en espera de confirmación presencial del alumno.</div>
-                </div>
-                <div class="guide-card-box guide-box-red">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-square"></i> Ocupado
-                    </div>
-                    <div class="guide-box-desc">La sala está siendo utilizada activamente por un estudiante.</div>
-                </div>
-                <div class="guide-card-box guide-box-gray">
-                    <div class="guide-box-header">
-                        <i class="fa-solid fa-square opacity-50"></i> Sin reserva
-                    </div>
-                    <div class="guide-box-desc">Sin reserva programada para este horario.</div>
                 </div>
             </div>
         </div>

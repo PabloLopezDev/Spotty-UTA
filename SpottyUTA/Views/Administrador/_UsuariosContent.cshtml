@@ -1,0 +1,269 @@
+@using SpottyUTA.Models
+@{
+    var usuarios = ViewBag.Usuarios as List<Usuario> ?? new List<Usuario>();
+    
+    int kpiTotal = ViewBag.KpiTotalUsuarios != null ? (int)ViewBag.KpiTotalUsuarios : 0;
+    int kpiHabilitados = ViewBag.KpiHabilitados != null ? (int)ViewBag.KpiHabilitados : 0;
+    int kpiBloqueados = ViewBag.KpiBloqueados != null ? (int)ViewBag.KpiBloqueados : 0;
+    int kpiEnRiesgo = ViewBag.KpiEnRiesgo != null ? (int)ViewBag.KpiEnRiesgo : 0;
+    
+    var estudiantesCount = usuarios.Count(u => u.Rol == "Estudiante");
+    var adminsCount = usuarios.Count(u => u.Rol == "Administrador");
+
+    var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var warningMessage = TempData["WarningMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+<main class="dashboard-content-wrapper" style="grid-template-columns: 1fr; gap: 24px; padding: 32px 36px;">
+
+    <!-- Modal Centrado de Notificación / Confirmación -->
+    @if (!string.IsNullOrEmpty(successMessage) || !string.IsNullOrEmpty(warningMessage) || !string.IsNullOrEmpty(errorMessage))
+    {
+        string notifTitle = !string.IsNullOrEmpty(successMessage) ? "Operación Exitosa" : !string.IsNullOrEmpty(warningMessage) ? "Advertencia del Sistema" : "Error en Operación";
+        string notifIcon = !string.IsNullOrEmpty(successMessage) ? "fa-circle-check text-success" : !string.IsNullOrEmpty(warningMessage) ? "fa-triangle-exclamation text-warning" : "fa-circle-xmark text-danger";
+        string notifMsg = (successMessage ?? warningMessage ?? errorMessage) ?? "";
+        string iconBg = !string.IsNullOrEmpty(successMessage) ? "#ECFDF5" : !string.IsNullOrEmpty(warningMessage) ? "#FFFBEB" : "#FEF2F2";
+
+        <div class="modal fade show d-block" id="modalNotificacionNotif" tabindex="-1" aria-hidden="true" style="background-color: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 18px; background-color: @iconBg;">
+                        <i class="fa-solid @notifIcon fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">@notifTitle</h5>
+                    <p class="text-secondary small mb-4" style="font-size: 0.88rem; line-height: 1.5;">@notifMsg</p>
+                    <div>
+                        <button type="button" class="btn btn-primary w-100 py-2.5 fw-bold" style="border-radius: 12px; font-size: 0.88rem;" onclick="this.closest('.modal').remove();">
+                            Entendido / Aceptar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Header de Sección -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-3">
+                <i class="fa-solid fa-users text-primary"></i>
+                <span>Gestión de Usuarios y Sanciones</span>
+            </h1>
+            <p class="text-muted mb-0 small">Administra los accesos de los alumnos, inasistencias acumuladas y usuarios sancionados.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="date-picker-mock shadow-sm me-2">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+            </div>
+            <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-bold shadow-sm" style="border-radius: 10px; font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#modalReglamentoSanciones">
+                <i class="fa-solid fa-book"></i> Reglamento y Guía
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Tarjetas KPI de Usuarios -->
+    <div class="kpi-grid-4">
+        <!-- KPI 1: Total Registrados -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Total Registrados</span>
+                <div class="kpi-icon-wrapper icon-bg-blue">
+                    <i class="fa-solid fa-users text-primary"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value">@kpiTotal</div>
+                <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">Comunidad UTA</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">@estudiantesCount alumnos, @adminsCount admins</div>
+        </div>
+
+        <!-- KPI 2: Habilitados -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Usuarios Habilitados</span>
+                <div class="kpi-icon-wrapper icon-bg-green">
+                    <i class="fa-solid fa-user-check text-success"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value text-success">@kpiHabilitados</div>
+                <span class="text-success fw-semibold" style="font-size: 0.75rem;">
+                    @((kpiTotal > 0 ? (int)Math.Round((double)kpiHabilitados / kpiTotal * 100) : 0))% habilitados
+                </span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Permiso para reservar boxes</div>
+        </div>
+
+        <!-- KPI 3: Usuarios Bloqueados -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">Usuarios Bloqueados</span>
+                <div class="kpi-icon-wrapper icon-bg-red">
+                    <i class="fa-solid fa-user-slash text-danger"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value text-danger">@kpiBloqueados</div>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.72rem;">Sancionados</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">3 faltas acumuladas o bloqueo manual</div>
+        </div>
+
+        <!-- KPI 4: En Riesgo -->
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <span class="kpi-title">En Riesgo de Sanción</span>
+                <div class="kpi-icon-wrapper icon-bg-yellow">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-baseline justify-content-between">
+                <div class="kpi-value text-warning">@kpiEnRiesgo</div>
+                <span class="text-warning fw-semibold" style="font-size: 0.75rem;">1 ó 2 Inasistencias</span>
+            </div>
+            <div class="kpi-subtext text-muted mt-2">Cerca del límite de sanción</div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación Directa por Estado y Rol -->
+    <div class="reservas-tabs-header">
+        <button type="button" class="reservas-tab-btn active" id="tabUsuarioAll" onclick="switchUsuarioTab('all')">
+            <i class="fa-solid fa-border-all"></i> Todos los Usuarios (@kpiTotal)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabUsuarioHabilitados" onclick="switchUsuarioTab('habilitados')">
+            <i class="fa-solid fa-user-check text-success"></i> Habilitados (@kpiHabilitados)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabUsuarioBloqueados" onclick="switchUsuarioTab('bloqueados')">
+            <i class="fa-solid fa-user-slash text-danger"></i> Bloqueados (@kpiBloqueados)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabUsuarioEstudiantes" onclick="switchUsuarioTab('estudiantes')">
+            <i class="fa-solid fa-graduation-cap"></i> Estudiantes (@estudiantesCount)
+        </button>
+        <button type="button" class="reservas-tab-btn" id="tabUsuarioAdmins" onclick="switchUsuarioTab('admins')">
+            <i class="fa-solid fa-shield-halved"></i> Administradores (@adminsCount)
+        </button>
+    </div>
+
+    <!-- Tabla Principal de Ancho Completo (1 Column) -->
+    <div class="admin-panel-card m-0">
+        <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+            <div class="modern-search-wrapper" style="width: 380px;">
+                <i class="fa-solid fa-magnifying-glass modern-search-icon"></i>
+                <input type="text" class="modern-search-input" id="searchUsuarioInput" placeholder="Buscar por nombre o correo..." style="width: 380px;" />
+            </div>
+            <span class="text-muted small fw-semibold" id="tableResultCountText">Mostrando todos los registros</span>
+        </div>
+
+        <div class="premium-data-table-wrapper">
+            <table class="table premium-data-table align-middle m-0" id="usuariosTable">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 220px;">Usuario</th>
+                        <th scope="col" style="min-width: 240px;">Correo Institucional</th>
+                        <th scope="col" class="text-center" style="width: 130px;">Rol</th>
+                        <th scope="col" class="text-center" style="width: 140px;">Inasistencias</th>
+                        <th scope="col" class="text-center" style="width: 130px;">Estado</th>
+                        <th scope="col" class="text-end" style="width: 180px;">Acciones de Gestión</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!usuarios.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
+                                <span>No hay usuarios registrados en el sistema.</span>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var u in usuarios)
+                        {
+                            string initials = u.NombreCompleto.Length >= 2 ? u.NombreCompleto.Substring(0, 2).ToUpper() : "US";
+                            string inasistenciasClass = u.ContadorInasistencias == 0 ? "bg-light text-secondary border" : u.ContadorInasistencias < 3 ? "bg-warning-subtle text-warning border border-warning-subtle" : "bg-danger-subtle text-danger border border-danger-subtle fw-bold";
+                            string inasistenciasIcon = u.ContadorInasistencias == 0 ? "fa-circle-check" : u.ContadorInasistencias < 3 ? "fa-triangle-exclamation" : "fa-ban";
+                            string isBloqueadoStr = u.EstaBloqueado ? "true" : "false";
+
+                            string avatarBgColor = u.EstaBloqueado ? "#EF4444" : u.Rol == "Administrador" ? "#2563EB" : "#4F46E5";
+
+                            <tr class="usuario-row" data-nombre="@u.NombreCompleto.ToLower()" data-correo="@u.CorreoUta.ToLower()" data-bloqueado="@isBloqueadoStr" data-rol="@u.Rol.ToLower()">
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="profile-avatar-circle flex-shrink-0" style="width: 38px; height: 38px; font-size: 0.85rem; font-weight: 700; background-color: @avatarBgColor; color: #FFF;">
+                                            @initials
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.88rem;">@u.NombreCompleto</div>
+                                            <div class="text-muted" style="font-size: 0.72rem;">ID: #@u.Id</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-secondary" style="font-size: 0.83rem;">
+                                    <i class="fa-regular fa-envelope me-2 opacity-75"></i>@u.CorreoUta
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(u.Rol == "Administrador" ? "bg-primary-subtle text-primary border border-primary-subtle" : "bg-light text-dark border") px-2.5 py-1.5" style="font-size: 0.75rem;">
+                                        @(u.Rol == "Administrador" ? "Admin" : "Estudiante")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @inasistenciasClass px-2.5 py-1.5" style="font-size: 0.75rem;">
+                                        <i class="fa-solid @inasistenciasIcon me-1"></i>@u.ContadorInasistencias Faltas
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (u.EstaBloqueado)
+                                    {
+                                        <span class="badge bg-danger text-white px-2.5 py-1.5 rounded-pill" style="font-size: 0.73rem;">
+                                            <i class="fa-solid fa-lock me-1"></i>Bloqueado
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill" style="font-size: 0.73rem;">
+                                            <i class="fa-solid fa-check me-1"></i>Habilitado
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                        <!-- Toggle Bloqueo -->
+                                        <form asp-controller="Administrador" asp-action="ToggleBloqueoUsuario" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="usuarioId" value="@u.Id" />
+                                            <input type="hidden" name="activeTab" class="inputActiveTabVal" value="@(ViewBag.ActiveTab ?? "all")" />
+                                            <button type="submit" class="btn btn-sm @(u.EstaBloqueado ? "btn-outline-success" : "btn-outline-danger") py-1 px-3 fw-semibold" style="font-size: 0.75rem; border-radius: 8px; white-space: nowrap;" title="@(u.EstaBloqueado ? "Desbloquear usuario" : "Bloquear usuario")">
+                                                <i class="fa-solid @(u.EstaBloqueado ? "fa-lock-open" : "fa-user-lock") me-1.5"></i>
+                                                @(u.EstaBloqueado ? "Desbloquear" : "Bloquear")
+                                            </button>
+                                        </form>
+
+                                        <!-- Reiniciar Faltas -->
+                                        @if (u.ContadorInasistencias > 0 || u.EstaBloqueado)
+                                        {
+                                            <form asp-controller="Administrador" asp-action="ReiniciarInasistencias" method="post" class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="usuarioId" value="@u.Id" />
+                                                <input type="hidden" name="activeTab" class="inputActiveTabVal" value="@(ViewBag.ActiveTab ?? "all")" />
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm py-1 px-2.5 fw-semibold" style="font-size: 0.75rem; border-radius: 8px; white-space: nowrap;" title="Resetear contador de faltas a 0" onclick="return confirm('¿Seguro que deseas reiniciar las faltas de @u.NombreCompleto a 0?');">
+                                                    <i class="fa-solid fa-rotate-left"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
