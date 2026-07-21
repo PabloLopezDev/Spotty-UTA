@@ -1,97 +1,76 @@
-# 🟢 Spotty UTA — Sistema de Gestión de Boxes de Estudio
+# Spotty UTA — Sistema de Gestión de Boxes de Estudio
 
-> **Plataforma web para la administración y reserva de boxes de estudio en la Biblioteca Central de la Universidad de Tarapacá, sede Saucache.**
-
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-10.0-purple?logo=dotnet)
-![Entity Framework](https://img.shields.io/badge/Entity%20Framework-Core-blue?logo=nuget)
-![SignalR](https://img.shields.io/badge/SignalR-Tiempo%20Real-green?logo=signalr)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-Database-red?logo=microsoftsqlserver)
-![License](https://img.shields.io/badge/Licencia-MIT-yellow)
+**Plataforma web para la administración y reserva de boxes de estudio en la Biblioteca Central de la Universidad de Tarapacá, sede Saucache.**
 
 ---
 
-## 📋 Descripción
+## Descripción
 
-Spotty UTA es una plataforma web que optimiza y automatiza la asignación de boxes de estudio en la biblioteca universitaria. El sistema reemplaza el proceso manual de solicitudes con una **matriz interactiva en tiempo real** que permite a estudiantes reservar salas y a administradores gestionar la operación desde un dashboard centralizado.
+Spotty UTA es una aplicación web desarrollada en ASP.NET Core que permite a los estudiantes de la Universidad de Tarapacá reservar boxes de estudio en la biblioteca central, y a los administradores gestionar dichas reservas en tiempo real. El sistema reemplaza el proceso manual de solicitudes con una matriz interactiva que refleja el estado de ocupación de cada sala de forma instantánea.
 
 ---
 
-## ⚡ Tecnologías
+## Tecnologías Utilizadas
 
 | Componente | Tecnología |
 |---|---|
-| **Framework Backend** | ASP.NET Core 10 (MVC) |
-| **ORM** | Entity Framework Core (Database-First) |
-| **Base de Datos** | SQL Server |
-| **Tiempo Real** | SignalR (WebSockets) |
-| **Frontend** | Razor Views + Bootstrap 5 + CSS personalizado |
-| **Autenticación** | Sesiones de servidor (Cookie-based) |
+| Framework Backend | ASP.NET Core 10 (MVC) |
+| ORM | Entity Framework Core (Database-First) |
+| Base de Datos | SQL Server |
+| Tiempo Real | SignalR (WebSockets) |
+| Frontend | Razor Views, Bootstrap 5, CSS personalizado |
+| Autenticación | Sesiones de servidor (Cookie-based) |
 
 ---
 
-## 🏗️ Arquitectura
+## Estructura del Proyecto
 
 ```
 SpottyUTA/
 ├── Controllers/          # Controladores MVC y API REST
-│   ├── AdministradorController.cs
-│   ├── AuthController.cs
-│   ├── ReservasController.cs
-│   ├── SalasApiController.cs
-│   └── HomeController.cs
-├── Data/                 # Contexto EF Core
-│   └── SpottyUtaContext.cs
+├── Data/                 # Contexto de Entity Framework Core
 ├── Helpers/              # Utilidades del sistema
-│   └── SimulationTime.cs
 ├── Hubs/                 # Hub de SignalR
-│   └── SalasHub.cs
 ├── Models/               # Entidades del dominio
-│   ├── Usuario.cs
-│   ├── Sala.cs
-│   └── Reserva.cs
-├── Services/             # Lógica de negocio
-│   ├── ISalasService.cs / SalasService.cs
-│   ├── IReservasService.cs / ReservasService.cs
-│   └── SalasStateBroadcaster.cs
+├── Services/             # Lógica de negocio e interfaces
 ├── Views/                # Vistas Razor (.cshtml)
 ├── wwwroot/              # Archivos estáticos (CSS, JS)
-├── Program.cs            # Punto de entrada
-└── ARCHITECTURE_DOC.md   # Documentación técnica completa
+├── Program.cs            # Punto de entrada de la aplicación
+└── ARCHITECTURE_DOC.md   # Documentación técnica detallada
 ```
 
-> 📘 Para documentación técnica detallada con diagramas de arquitectura, ER y flujos, consultar [ARCHITECTURE_DOC.md](SpottyUTA/ARCHITECTURE_DOC.md).
+Para mayor detalle sobre la arquitectura, diagramas de entidades y flujos del sistema, consultar [ARCHITECTURE_DOC.md](SpottyUTA/ARCHITECTURE_DOC.md).
 
 ---
 
-## 🎯 Funcionalidades Principales
+## Funcionalidades
 
-### Panel de Estudiante
-- 🟢 Visualización en tiempo real del estado de todos los boxes por pisos
-- 📅 Reserva de boxes con selección de horario
-- ⏱️ Duración máxima de 2 horas por bloque
-- 📱 Interfaz responsiva (Mobile-First)
+### Estudiantes
+- Visualización en tiempo real del estado de todos los boxes organizados por pisos.
+- Reserva de boxes con selección de horario (bloques de hasta 2 horas).
+- Interfaz responsiva adaptada a dispositivos móviles.
 
-### Panel de Administrador
-- 📊 **Dashboard** con KPIs en tiempo real (disponibles, reservadas, ocupadas)
-- 🏢 **Gestión de Salas** — Agregar, inhabilitar/activar y eliminar boxes
-- 📋 **Reservas Activas** — Tabla filtrable + Vista de ocupación temporal (Gantt)
-- 👥 **Usuarios** — Bloqueo/desbloqueo manual y reset de inasistencias
-- 🔔 **Notificaciones** sincronizadas entre vistas
+### Administradores
+- **Dashboard** con indicadores clave (KPIs) de disponibilidad, reservas y ocupación.
+- **Gestión de Salas** — Creación, inhabilitación y eliminación de boxes.
+- **Reservas Activas** — Tabla filtrable con vista de ocupación temporal tipo Gantt.
+- **Gestión de Usuarios** — Bloqueo, desbloqueo y reinicio de contadores de inasistencia.
+- **Notificaciones** sincronizadas entre todas las secciones del panel.
 
-### Motor de Reglas de Negocio
-- ⏰ Horarios adaptativos: L-V (08:00-21:00), Sáb (09:00-13:00, solo 1° piso), Dom (cerrado)
-- 🚫 Protección contra reservas duplicadas y solapamientos
-- ⚠️ Tolerancia de 20 minutos para confirmar asistencia
-- 🔒 Bloqueo automático al acumular 3 inasistencias
-- 📐 Duración mínima de 30 minutos por reserva
+### Reglas de Negocio
+- Horarios adaptativos: lunes a viernes (08:00–21:00), sábados (09:00–13:00, solo primer piso), domingos cerrado.
+- Protección contra reservas duplicadas y solapamientos horarios.
+- Tolerancia de 20 minutos para confirmar asistencia presencial.
+- Bloqueo automático de cuenta al acumular 3 inasistencias.
+- Duración mínima de 30 minutos por reserva.
 
 ### Comunicación en Tiempo Real
-- 🔄 **SignalR** actualiza todas las pantallas activas sin recargar la página
-- 🕐 **SalasStateBroadcaster** limpia automáticamente salas expiradas cada 15 segundos
+- SignalR actualiza todas las pantallas activas sin necesidad de recargar la página.
+- Un servicio en segundo plano limpia automáticamente salas expiradas cada 15 segundos.
 
 ---
 
-## 🚀 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### Prerrequisitos
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
@@ -100,18 +79,18 @@ SpottyUTA/
 ### Pasos
 
 ```bash
-# 1. Clonar el repositorio
+# Clonar el repositorio
 git clone https://github.com/PabloLopezDev/Spotty-UTA.git
 cd Spotty-UTA/SpottyUTA
 
-# 2. Configurar la cadena de conexión en appsettings.json
-# Editar "DefaultConnection" con tus credenciales de SQL Server
+# Configurar la cadena de conexión en appsettings.json
+# Editar "DefaultConnection" con las credenciales de SQL Server
 
-# 3. Restaurar dependencias y compilar
+# Restaurar dependencias y compilar
 dotnet restore
 dotnet build
 
-# 4. Ejecutar la aplicación
+# Ejecutar la aplicación
 dotnet run
 ```
 
@@ -119,37 +98,20 @@ La aplicación estará disponible en `https://localhost:5001` o `http://localhos
 
 ---
 
-## 👥 Contribuidores
+## Contribuidores
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/PabloLopezDev">
-        <img src="https://github.com/PabloLopezDev.png" width="100px;" alt="PabloLopezDev"/>
-        <br /><sub><b>Pablo López</b></sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/icuevas1014">
-        <img src="https://github.com/icuevas1014.png" width="100px;" alt="icuevas1014"/>
-        <br /><sub><b>Ignacio Cuevas</b></sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/Deleriusprohd">
-        <img src="https://github.com/Deleriusprohd.png" width="100px;" alt="Deleriusprohd"/>
-        <br /><sub><b>Deleriusprohd</b></sub>
-      </a>
-    </td>
-  </tr>
-</table>
+| | Nombre | GitHub |
+|---|---|---|
+| <img src="https://github.com/PabloLopezDev.png" width="40"/> | Pablo López | [@PabloLopezDev](https://github.com/PabloLopezDev) |
+| <img src="https://github.com/icuevas1014.png" width="40"/> | Ignacio Cuevas | [@icuevas1014](https://github.com/icuevas1014) |
+| <img src="https://github.com/Deleriusprohd.png" width="40"/> | Deleriusprohd | [@Deleriusprohd](https://github.com/Deleriusprohd) |
 
 ---
 
-## 📄 Licencia
+## Licencia
 
-Este proyecto está bajo la licencia **MIT**. Consultar el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la licencia MIT. Consultar el archivo [LICENSE](LICENSE) para más detalles.
 
 ---
 
-> *Proyecto académico desarrollado para la Universidad de Tarapacá — Arica, Chile.*
+*Proyecto académico — Universidad de Tarapacá, Arica, Chile.*
