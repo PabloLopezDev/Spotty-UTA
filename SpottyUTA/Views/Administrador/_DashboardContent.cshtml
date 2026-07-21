@@ -288,33 +288,18 @@
                                                         <i class="fa-solid fa-circle-check"></i>
                                                     </button>
                                                 </form>
-                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas cancelar esta reserva sin sancionar al estudiante? (Útil si se cancelaron clases o hubo un imprevisto).');">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="reservaId" value="@r.Id" />
-                                                    <input type="hidden" name="accion" value="liberar" />
-                                                    <button type="submit" class="btn-action-icon text-warning" title="Cancelar sin Sanción (Sin Falta)">
-                                                        <i class="fa-solid fa-ban"></i>
-                                                    </button>
-                                                </form>
-                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Seguro que deseas marcar la inasistencia? Esto sumará una falta al estudiante.');">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="reservaId" value="@r.Id" />
-                                                    <input type="hidden" name="accion" value="falta" />
-                                                    <button type="submit" class="btn-action-icon text-danger" title="Marcar Falta">
-                                                        <i class="fa-solid fa-user-xmark"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn-action-icon text-warning" title="Cancelar sin Sanción (Sin Falta)" onclick="abrirModalLiberarSinPenalizacion(@r.Id, '@r.Usuario.NombreCompleto', '@r.Sala.Nombre')">
+                                                    <i class="fa-solid fa-ban"></i>
+                                                </button>
+                                                <button type="button" class="btn-action-icon text-danger" title="Marcar Inasistencia" onclick="abrirModalMarcarFalta(@r.Id, '@r.Usuario.NombreCompleto', '@r.Sala.Nombre')">
+                                                    <i class="fa-solid fa-user-xmark"></i>
+                                                </button>
                                             }
                                             else
                                             {
-                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas liberar este box tempranamente? No se aplicará penalización.');">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="reservaId" value="@r.Id" />
-                                                    <input type="hidden" name="accion" value="liberar" />
-                                                    <button type="submit" class="btn-action-icon text-warning" title="Liberar Box Temprano">
-                                                        <i class="fa-solid fa-door-open"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn-action-icon text-warning" title="Liberar Box Temprano" onclick="abrirModalLiberarSinPenalizacion(@r.Id, '@r.Usuario.NombreCompleto', '@r.Sala.Nombre')">
+                                                    <i class="fa-solid fa-door-open"></i>
+                                                </button>
                                             }
                                         </div>
                                     </td>

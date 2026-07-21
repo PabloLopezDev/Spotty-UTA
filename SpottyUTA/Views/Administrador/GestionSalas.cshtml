@@ -49,12 +49,6 @@
                         <span class="menu-item-text">Usuarios</span>
                     </a>
                 </li>
-                <li>
-                    <a href="#" class="menu-item-link">
-                        <i class="fa-solid fa-sliders"></i>
-                        <span class="menu-item-text">Configuración</span>
-                    </a>
-                </li>
             </ul>
 
             <div class="sidebar-footer">
@@ -72,44 +66,60 @@
             <header class="admin-top-header">
                 <div class="d-flex align-items-center gap-3">
                     <span class="header-role-label">Administrador</span>
-                    
-                    @if (SpottyUTA.Helpers.SimulationTime.IsEnabled)
-                    {
-                        <form asp-controller="Administrador" asp-action="ToggleSimulationMode" method="post" class="d-inline-flex align-items-center m-0">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="enable" value="false" />
-                            <span class="badge bg-warning text-dark border me-2 py-1.5 px-3" style="font-size:0.75rem; border-radius: 8px;">
-                                <i class="fa-solid fa-flask-vial me-1"></i> SIMULACIÓN ACTIVA (Lunes 10:00)
-                            </span>
-                            <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-3 fw-bold" style="font-size:0.7rem; border-radius:6px;">
-                                Desactivar
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <form asp-controller="Administrador" asp-action="ToggleSimulationMode" method="post" class="d-inline-flex align-items-center m-0">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="enable" value="true" />
-                            <button type="submit" class="btn btn-outline-primary btn-sm py-1 px-3 fw-medium" style="font-size:0.75rem; border-radius:6px;">
-                                <i class="fa-solid fa-play me-1"></i> Modo Simulación (Probar)
-                            </button>
-                        </form>
-                    }
                 </div>
 
-                <div class="header-user-profile">
+                <div class="header-right-actions">
+                    <!-- Campana Notificaciones con Dropdown Interactivo -->
                     <div class="dropdown">
-                        <div class="profile-pill-trigger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="profile-avatar-circle">
-                                @(nombreAdmin.Length >= 2 ? nombreAdmin.Substring(0, 2).ToUpper() : "AD")
+                        <button type="button" class="btn notification-bell-container p-0 border-0" id="notifDropdownTriggerGestion" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-regular fa-bell bell-icon"></i>
+                            <span class="notification-badge" id="notifBadgeCountGestion">3</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu mt-2">
+                            <div class="p-3 text-white d-flex align-items-center justify-content-between" style="background-color: #0F172A;">
+                                <h6 class="fw-bold mb-0 text-white" style="font-size: 0.88rem;">
+                                    <i class="fa-solid fa-bell text-warning me-2"></i>Notificaciones
+                                </h6>
+                                <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.7rem;">3 Nuevas</span>
                             </div>
-                            <span class="profile-name-text">@nombreAdmin</span>
-                            <i class="fa-solid fa-chevron-down profile-chevron"></i>
+                            <div style="max-height: 280px; overflow-y: auto;">
+                                <div class="p-3 border-bottom text-start bg-white" style="transition: background-color 0.15s ease;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-circle-exclamation text-warning me-2"></i>Box 3 próximo a vencer</span>
+                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hace 5m</span>
+                                    </div>
+                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">Quedan menos de 15 minutos para la reserva activa en Box 3.</p>
+                                </div>
+                                <div class="p-3 border-bottom text-start bg-white" style="transition: background-color 0.15s ease;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-user-xmark text-danger me-2"></i>Usuario sancionado</span>
+                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hace 20m</span>
+                                    </div>
+                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">El estudiante acumuló 3 faltas y fue bloqueado automáticamente.</p>
+                                </div>
+                                <div class="p-3 text-start bg-white" style="transition: background-color 0.15s ease;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;"><i class="fa-solid fa-circle-check text-success me-2"></i>Sistema Operativo</span>
+                                        <span style="color: #64748B; font-size: 0.7rem; font-weight: 600;">Hoy 08:00</span>
+                                    </div>
+                                    <p class="mb-0" style="color: #334155; font-size: 0.78rem; font-weight: 500; line-height: 1.35;">12 boxes de estudio disponibles para reserva hoy.</p>
+                                </div>
+                            </div>
+                            <div class="p-2.5 text-center border-top" style="background-color: #F8FAFC;">
+                                <button type="button" class="btn btn-link text-decoration-none fw-bold p-0" style="color: #2563EB; font-size: 0.78rem;" onclick="document.querySelectorAll('.notification-badge').forEach(b => b.style.display='none');">
+                                    <i class="fa-solid fa-check-double me-1"></i>Marcar todas como leídas
+                                </button>
+                            </div>
                         </div>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <li><a class="dropdown-item text-danger" href="@Url.Action("CerrarSesion", "Auth")"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar Sesión</a></li>
-                        </ul>
+                    </div>
+
+                    <!-- Perfil Dropdown -->
+                    <div class="admin-profile-dropdown">
+                        <div class="profile-avatar-circle">
+                            @(nombreAdmin.Length >= 2 ? nombreAdmin.Substring(0, 2).ToUpper() : "AD")
+                        </div>
+                        <span class="profile-name-text">@nombreAdmin</span>
+                        <i class="fa-solid fa-chevron-down profile-chevron"></i>
                     </div>
                 </div>
             </header>
