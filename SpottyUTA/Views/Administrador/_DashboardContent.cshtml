@@ -1,0 +1,458 @@
+@{
+    var nombreAdmin = ViewBag.NombreAdministrador as string ?? "Administrador";
+    var totalReservas = (int)(ViewBag.KpiTotalReservas ?? 0);
+    var disponibles = (int)(ViewBag.KpiDisponibles ?? 0);
+    var reservadas = (int)(ViewBag.KpiReservadas ?? 0);
+    var ocupadas = (int)(ViewBag.KpiOcupadas ?? 0);
+    var salasTotales = (int)(ViewBag.SalasTotalesCount ?? 1);
+
+    var reservasActivas = ViewBag.ReservasActivas as List<Reserva> ?? new List<Reserva>();
+    var proximasReservas = ViewBag.ProximasReservas as List<Reserva> ?? new List<Reserva>();
+    var actividadReciente = ViewBag.ActividadReciente as List<Reserva> ?? new List<Reserva>();
+
+    var ahora = DateTime.Now;
+    var horaActualTimeSpan = ahora.TimeOfDay;
+
+    int disponiblePct = (int)Math.Round((double)disponibles / salasTotales * 100);
+    int reservadaPct = (int)Math.Round((double)reservadas / salasTotales * 100);
+    int ocupadaPct = (int)Math.Round((double)ocupadas / salasTotales * 100);
+
+    int proximosAVencerCount = reservasActivas.Count(r =>
+    {
+        var rest = r.HoraFin.ToTimeSpan() - horaActualTimeSpan;
+        return rest.TotalMinutes > 0 && rest.TotalMinutes <= 30;
+    });
+}
+
+<!-- Dashboard Content Wrappers -->
+<main class="dashboard-content-wrapper">
+
+    <!-- Panel Central (Resumen, KPIs, Tabla) -->
+    <div class="dashboard-center-panel">
+
+        <!-- Welcome Row -->
+        <div class="welcome-header-row">
+            <div class="welcome-title-group">
+                <h2>¡Buenos días, @nombreAdmin! 👋</h2>
+                <p>Aquí tienes un resumen general del sistema.</p>
+            </div>
+            
+            <div class="date-picker-mock shadow-sm">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+                <i class="fa-solid fa-chevron-down ms-1" style="font-size:0.75rem;"></i>
+            </div>
+        </div>
+
+        <!-- KPIs Metrics Row -->
+        <div class="kpis-metrics-grid">
+            <!-- Reservas Hoy -->
+            <div class="kpi-metric-card">
+                <div class="kpi-card-header">
+                    <span class="kpi-card-title">Reservas hoy</span>
+                    <div class="kpi-icon-container kpi-icon-blue">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                </div>
+                <h3 class="kpi-card-value">@totalReservas</h3>
+                <div class="d-flex align-items-center mt-auto gap-2">
+                    <span class="kpi-trend-up">
+                        <i class="fa-solid fa-arrow-trend-up"></i> 12%
+                    </span>
+                    <span class="kpi-card-footer-text">vs ayer</span>
+                </div>
+            </div>
+
+            <!-- Salas Disponibles -->
+            <div class="kpi-metric-card">
+                <div class="kpi-card-header">
+                    <span class="kpi-card-title">Salas disponibles</span>
+                    <div class="kpi-icon-container kpi-icon-green">
+                        <i class="fa-solid fa-door-open"></i>
+                    </div>
+                </div>
+                <h3 class="kpi-card-value">@disponibles</h3>
+                <div class="kpi-card-progress-bar">
+                    <div class="kpi-progress-fill progress-green" style="width: @disponiblePct%;"></div>
+                </div>
+                <p class="kpi-card-footer-text">@disponiblePct% del total</p>
+            </div>
+
+            <!-- Salas Reservadas -->
+            <div class="kpi-metric-card">
+                <div class="kpi-card-header">
+                    <span class="kpi-card-title">Salas reservadas</span>
+                    <div class="kpi-icon-container kpi-icon-orange">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                </div>
+                <h3 class="kpi-card-value">@reservadas</h3>
+                <div class="kpi-card-progress-bar">
+                    <div class="kpi-progress-fill progress-orange" style="width: @reservadaPct%;"></div>
+                </div>
+                <p class="kpi-card-footer-text">@reservadaPct% del total</p>
+            </div>
+
+            <!-- Salas Ocupadas -->
+            <div class="kpi-metric-card">
+                <div class="kpi-card-header">
+                    <span class="kpi-card-title">Salas ocupadas</span>
+                    <div class="kpi-icon-container kpi-icon-red">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </div>
+                </div>
+                <h3 class="kpi-card-value">@ocupadas</h3>
+                <div class="kpi-card-progress-bar">
+                    <div class="kpi-progress-fill progress-red" style="width: @ocupadaPct%;"></div>
+                </div>
+                <p class="kpi-card-footer-text">@ocupadaPct% del total</p>
+            </div>
+        </div>
+
+        <!-- Reservas Activas Table Panel -->
+        <div class="section-card-panel">
+            <div class="panel-header-row">
+                <h4 class="panel-header-title">
+                    <i class="fa-regular fa-calendar"></i> Reservas Activas
+                </h4>
+                <div class="panel-header-actions">
+                    <div class="panel-search-container">
+                        <i class="fa-solid fa-magnifying-glass panel-search-icon"></i>
+                        <input type="text" class="panel-search-input" placeholder="Buscar usuario..." />
+                    </div>
+                    <div class="filter-dropdown-container">
+                        <button class="btn-panel-action filter-dropdown-toggle" type="button">
+                            <i class="fa-solid fa-sliders"></i> Filtros
+                        </button>
+                        <div class="filter-dropdown-menu filter-card-popup">
+                            <!-- Header -->
+                            <div class="filter-card-header">
+                                <span class="filter-card-title">Filtros</span>
+                                <button type="button" class="filter-card-close-btn btn-close-dropdown" aria-label="Close">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <!-- Piso Selection -->
+                            <div class="filter-card-section">
+                                <span class="filter-section-title">Piso</span>
+                                <div class="filter-checkbox-item">
+                                    <input class="filter-piso-all-checkbox" type="checkbox" id="chkPisoAll" checked>
+                                    <label class="filter-checkbox-label" style="cursor:pointer;" for="chkPisoAll">Seleccionar todos</label>
+                                </div>
+                                <div class="filter-checkbox-item">
+                                    <input class="filter-piso-checkbox" type="checkbox" value="1" id="chkPiso1" checked>
+                                    <label class="filter-checkbox-label" style="cursor:pointer;" for="chkPiso1">Primer Piso</label>
+                                </div>
+                                <div class="filter-checkbox-item">
+                                    <input class="filter-piso-checkbox" type="checkbox" value="2" id="chkPiso2" checked>
+                                    <label class="filter-checkbox-label" style="cursor:pointer;" for="chkPiso2">Segundo Piso</label>
+                                </div>
+                                <div class="filter-checkbox-item">
+                                    <input class="filter-piso-checkbox" type="checkbox" value="3" id="chkPiso3" checked>
+                                    <label class="filter-checkbox-label" style="cursor:pointer;" for="chkPiso3">Tercer Piso</label>
+                                </div>
+                            </div>
+
+                            <!-- Estado Selection -->
+                            <div class="filter-card-section">
+                                <span class="filter-section-title">Estado</span>
+                                <div class="filter-states-row">
+                                    <div class="state-pill-item">
+                                        <input class="filter-estado-checkbox" type="checkbox" value="reservado" id="chkEstReservado" checked>
+                                        <label class="filter-estado-label label-reservado" style="cursor:pointer;" for="chkEstReservado">Reservado</label>
+                                    </div>
+                                    <div class="state-pill-item">
+                                        <input class="filter-estado-checkbox" type="checkbox" value="ocupado" id="chkEstOcupado" checked>
+                                        <label class="filter-estado-label label-ocupado" style="cursor:pointer;" for="chkEstOcupado">Ocupado</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="filter-card-divider"></div>
+
+                            <!-- Footer Actions -->
+                            <div class="filter-card-footer">
+                                <button type="button" class="btn-filter-clean" id="btnCleanFilters">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Limpiar
+                                </button>
+                                <button type="button" class="btn-filter-apply" id="btnApplyFilters">
+                                    <i class="fa-solid fa-check"></i> Aplicar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="premium-data-table-wrapper">
+                <table class="premium-data-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Sala</th>
+                            <th>Hora</th>
+                            <th>Estado</th>
+                            <th>Tiempo Restante</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <!-- Rows -->
+                    <tbody>
+                        @if (!reservasActivas.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted py-4 text-center">
+                                    No hay reservas activas en este momento.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var r in reservasActivas)
+                            {
+                                var rest = r.HoraFin.ToTimeSpan() - horaActualTimeSpan;
+                                var isOcupado = r.Sala.EstadoActual == "O";
+                                <tr data-piso="@r.Sala.Piso">
+                                    <!-- Usuario -->
+                                    <td>
+                                        <div class="table-user-cell">
+                                            <div class="table-user-avatar">
+                                                @{
+                                                    var userInitials = "";
+                                                    if (r.Usuario.NombreCompleto.Contains(" "))
+                                                    {
+                                                        var parts = r.Usuario.NombreCompleto.Split(' ');
+                                                        userInitials = (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+                                                    }
+                                                    else if (r.Usuario.NombreCompleto.Length > 0)
+                                                    {
+                                                        userInitials = r.Usuario.NombreCompleto.Substring(0, Math.Min(2, r.Usuario.NombreCompleto.Length)).ToUpper();
+                                                    }
+                                                }
+                                                @userInitials
+                                            </div>
+                                            <div class="table-user-info-text">
+                                                <span class="table-user-name">@r.Usuario.NombreCompleto</span>
+                                                <span class="table-user-sub">@r.Usuario.CorreoUta</span>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Sala -->
+                                    <td class="fw-semibold">@r.Sala.Nombre</td>
+
+                                    <!-- Hora -->
+                                    <td>@r.HoraInicio.ToString("HH:mm")</td>
+
+                                    <!-- Estado -->
+                                    <td>
+                                        @if (isOcupado)
+                                        {
+                                            <span class="status-pill-badge badge-ocupado">Ocupado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill-badge badge-reservado">Reservado</span>
+                                        }
+                                    </td>
+
+                                    <!-- Tiempo Restante -->
+                                    <td>
+                                        @if (rest.TotalMinutes <= 0)
+                                        {
+                                            <span class="text-secondary">-</span>
+                                        }
+                                        else if (rest.Hours > 0)
+                                        {
+                                            <span class="time-remaining-red">@rest.Hours h @rest.Minutes min</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="time-remaining-red">@rest.Minutes min</span>
+                                        }
+                                    </td>
+
+                                    <!-- Acción -->
+                                    <td>
+                                        <div class="table-inline-actions">
+                                            @if (!isOcupado)
+                                            {
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="ocupar" />
+                                                    <button type="submit" class="btn-action-icon text-success" title="Confirmar Asistencia">
+                                                        <i class="fa-solid fa-circle-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas cancelar esta reserva sin sancionar al estudiante? (Útil si se cancelaron clases o hubo un imprevisto).');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="liberar" />
+                                                    <button type="submit" class="btn-action-icon text-warning" title="Cancelar sin Sanción (Sin Falta)">
+                                                        <i class="fa-solid fa-ban"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Seguro que deseas marcar la inasistencia? Esto sumará una falta al estudiante.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="falta" />
+                                                    <button type="submit" class="btn-action-icon text-danger" title="Marcar Falta">
+                                                        <i class="fa-solid fa-user-xmark"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas liberar este box tempranamente? No se aplicará penalización.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="liberar" />
+                                                    <button type="submit" class="btn-action-icon text-warning" title="Liberar Box Temprano">
+                                                        <i class="fa-solid fa-door-open"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Pagination -->
+            <div class="table-pagination-footer">
+                <span class="pagination-info-text">Mostrando 1 a @Math.Min(reservasActivas.Count, 3) de @reservasActivas.Count resultados</span>
+                <div class="pagination-btn-group">
+                    <button class="btn-pagination-item"><i class="fa-solid fa-chevron-left" style="font-size:0.75rem;"></i></button>
+                    <button class="btn-pagination-item active">1</button>
+                    <button class="btn-pagination-item">2</button>
+                    <button class="btn-pagination-item">3</button>
+                    <button class="btn-pagination-item">4</button>
+                    <button class="btn-pagination-item"><i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Alert Banner -->
+        <div class="bottom-alert-banner shadow-sm">
+            <div class="alert-banner-left">
+                <div class="alert-bell-circle">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <div class="alert-banner-text-group">
+                    <span class="alert-banner-title">@proximosAVencerCount reservas próximas a vencer</span>
+                    <span class="alert-banner-sub">Revisa las reservas que están por finalizar.</span>
+                </div>
+            </div>
+            <a href="@Url.Action("ReservasActivas", "Administrador")" class="btn-alert-banner text-decoration-none">
+                Ver reservas
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Barra Lateral Derecha (Próximas Reservas & Actividad Reciente) -->
+    <div class="dashboard-right-sidebar">
+
+        <!-- Próximas Reservas -->
+        <div class="right-sidebar-section">
+            <h4 class="right-section-title">
+                <i class="fa-regular fa-clock"></i> Próximas reservas
+            </h4>
+            <div class="right-sidebar-list">
+                @if (!proximasReservas.Any())
+                {
+                    <div class="text-muted py-3 text-center" style="font-size:0.82rem;">
+                        No hay más reservas programadas hoy.
+                    </div>
+                }
+                else
+                {
+                    foreach (var r in proximasReservas)
+                    {
+                        var timeUntil = r.HoraInicio.ToTimeSpan() - horaActualTimeSpan;
+                        var timeText = timeUntil.Hours > 0 ? $"{timeUntil.Hours} h {timeUntil.Minutes} min" : $"{timeUntil.Minutes} min";
+                        <div class="upcoming-res-item">
+                            <span class="upcoming-time-stamp">@r.HoraInicio.ToString("HH:mm")</span>
+                            <div class="upcoming-detail-group">
+                                <span class="upcoming-detail-title">@r.Sala.Nombre</span>
+                                <span class="upcoming-detail-sub">@r.Usuario.NombreCompleto</span>
+                            </div>
+                            <span class="upcoming-badge-time @(timeUntil.TotalHours > 1 ? "upcoming-far" : "")">
+                                @timeText
+                            </span>
+                        </div>
+                    }
+                }
+            </div>
+            <a href="@Url.Action("Index", "Home")" class="btn-sidebar-link-footer">Ver todas</a>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="right-sidebar-section">
+            <h4 class="right-section-title">
+                <i class="fa-solid fa-chart-line"></i> Actividad reciente
+            </h4>
+            <div class="recent-activity-list">
+                @if (!actividadReciente.Any())
+                {
+                    <div class="text-muted py-3 text-center" style="font-size:0.82rem;">
+                        Sin actividad reciente registrada.
+                    </div>
+                }
+                else
+                {
+                    foreach (var act in actividadReciente)
+                    {
+                        string iconClass = "fa-check";
+                        string containerClass = "activity-icon-green";
+                        string msgText = "";
+
+                        if (act.EstadoReserva == "A" || act.EstadoReserva == "Activa")
+                        {
+                            iconClass = "fa-check";
+                            containerClass = "activity-icon-green";
+                            msgText = $"Reserva creada: {act.Sala.Nombre} reservada por {act.Usuario.NombreCompleto}";
+                        }
+                        else if (act.EstadoReserva == "U")
+                        {
+                            iconClass = "fa-clock";
+                            containerClass = "activity-icon-orange";
+                            msgText = $"Reserva usada: Box {act.Sala.Nombre} ocupado por {act.Usuario.NombreCompleto}";
+                        }
+                        else if (act.EstadoReserva == "C")
+                        {
+                            iconClass = "fa-xmark";
+                            containerClass = "activity-icon-red";
+                            msgText = $"Reserva cancelada: Sala {act.Sala.Nombre} liberada por {act.Usuario.NombreCompleto}";
+                        }
+                        else if (act.EstadoReserva == "I")
+                        {
+                            iconClass = "fa-exclamation";
+                            containerClass = "activity-icon-red";
+                            msgText = $"Inasistencia registrada: Box {act.Sala.Nombre} expiró para {act.Usuario.NombreCompleto}";
+                        }
+
+                        <div class="activity-feed-item">
+                            <div class="activity-icon-container @containerClass">
+                                <i class="fa-solid @iconClass"></i>
+                            </div>
+                            <div class="activity-content-group">
+                                <span class="activity-text">@msgText</span>
+                                <span class="activity-time">@act.Fecha.ToString("dd/MM") a las @act.HoraInicio.ToString("HH:mm")</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <a href="#" class="btn-sidebar-link-footer">Ver toda la actividad</a>
+        </div>
+
+    </div>
+
+</main>

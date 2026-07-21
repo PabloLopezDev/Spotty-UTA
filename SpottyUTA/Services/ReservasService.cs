@@ -40,7 +40,7 @@ namespace SpottyUTA.Services
                 return (false, "El formato de hora ingresado no es válido.", null);
             }
 
-            var ahora = DateTime.Now;
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
             var fechaHoy = DateOnly.FromDateTime(ahora);
 
             var horaActualControl = TimeOnly.FromDateTime(ahora);
@@ -185,6 +185,17 @@ namespace SpottyUTA.Services
                 }
 
                 reserva.EstadoReserva = "Cancelada";
+                successMessage = "El box ha sido liberado tempranamente de forma exitosa.";
+            }
+            else if (accion == "falta")
+            {
+                var sala = await _context.Salas.FindAsync(reserva.SalaId);
+                if (sala != null)
+                {
+                    sala.EstadoActual = "D";
+                }
+
+                reserva.EstadoReserva = "Inasistencia";
 
                 if (reserva.Usuario != null)
                 {
@@ -197,7 +208,7 @@ namespace SpottyUTA.Services
                     }
                     else
                     {
-                        successMessage = $"Reserva liberada. Se registró 1 falta para el alumno (Total: {reserva.Usuario.ContadorInasistencias}).";
+                        successMessage = $"Reserva liberada por inasistencia. Se registró 1 falta para el alumno (Total: {reserva.Usuario.ContadorInasistencias}).";
                     }
                 }
             }

@@ -1,0 +1,503 @@
+@using SpottyUTA.Models
+@{
+    var reservasActivas = ViewBag.ReservasActivas as List<Reserva> ?? new List<Reserva>();
+    var salas = ViewBag.Salas as List<Sala> ?? new List<Sala>();
+    
+    var kpiTotal = ViewBag.KpiTotalActivas != null ? (int)ViewBag.KpiTotalActivas : 0;
+    var kpiDisponibles = ViewBag.KpiDisponibles != null ? (int)ViewBag.KpiDisponibles : 0;
+    var kpiReservadas = ViewBag.KpiReservadas != null ? (int)ViewBag.KpiReservadas : 0;
+    var kpiOcupadas = ViewBag.KpiOcupadas != null ? (int)ViewBag.KpiOcupadas : 0;
+    var totalSalas = ViewBag.SalasTotalesCount != null ? (int)ViewBag.SalasTotalesCount : 12;
+
+    var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+    var horaActual = TimeOnly.FromDateTime(ahora);
+
+    var pctDisp = totalSalas > 0 ? (int)Math.Round((double)kpiDisponibles / totalSalas * 100) : 0;
+    var pctRes = totalSalas > 0 ? (int)Math.Round((double)kpiReservadas / totalSalas * 100) : 0;
+    var pctOcu = totalSalas > 0 ? (int)Math.Round((double)kpiOcupadas / totalSalas * 100) : 0;
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var warningMessage = TempData["WarningMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+<main class="dashboard-content-wrapper" style="grid-template-columns: 1fr; gap: 24px; padding: 32px 36px;">
+
+<!-- Notification Toasts -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #ECFDF5; color: #065F46;" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i> @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(warningMessage))
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FFFBEB; color: #92400E;" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i> @warningMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #FEF2F2; color: #991B1B;" role="alert">
+        <i class="fa-solid fa-circle-xmark me-2"></i> @errorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Header de Sección -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="fa-regular fa-calendar-check text-primary me-2"></i>Reservas Activas
+        </h1>
+        <p class="text-muted mb-0 small">Administra y controla en tiempo real todas las salas reservadas.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="date-picker-mock shadow-sm">
+            <i class="fa-regular fa-calendar-days"></i>
+            <span>Hoy, @ahora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+        </div>
+    </div>
+</div>
+
+<!-- 4 Tarjetas KPI (Coincidentes con Figma) -->
+<div class="kpi-grid-4">
+    <!-- KPI 1: Total Reservas -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-title">Total Reservas Activas</span>
+            <div class="kpi-icon-wrapper icon-bg-blue">
+                <i class="fa-solid fa-users text-primary"></i>
+            </div>
+        </div>
+        <div class="d-flex align-items-baseline justify-content-between">
+            <div class="kpi-value">@kpiTotal</div>
+            <svg class="sparkline-svg" viewBox="0 0 60 24">
+                <path d="M0,20 L15,14 L30,16 L45,8 L60,4" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="kpi-subtext text-muted d-flex align-items-center justify-content-between mt-1">
+            <span>En todas las salas</span>
+            <span class="text-success fw-semibold" style="font-size: 0.72rem;"><i class="fa-solid fa-arrow-up"></i> 12% vs ayer</span>
+        </div>
+    </div>
+
+    <!-- KPI 2: Disponibles -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-title">Salas Disponibles</span>
+            <div class="kpi-icon-wrapper icon-bg-green">
+                <i class="fa-solid fa-door-open text-success"></i>
+            </div>
+        </div>
+        <div class="d-flex align-items-baseline justify-content-between">
+            <div class="kpi-value text-success">@kpiDisponibles</div>
+            <svg class="sparkline-svg" viewBox="0 0 60 24">
+                <path d="M0,18 L15,15 L30,8 L45,12 L60,4" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="kpi-subtext text-muted mt-1">@pctDisp% del total</div>
+    </div>
+
+    <!-- KPI 3: Reservadas -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-title">Salas Reservadas</span>
+            <div class="kpi-icon-wrapper icon-bg-yellow">
+                <i class="fa-regular fa-clock text-warning"></i>
+            </div>
+        </div>
+        <div class="d-flex align-items-baseline justify-content-between">
+            <div class="kpi-value text-warning">@kpiReservadas</div>
+            <svg class="sparkline-svg" viewBox="0 0 60 24">
+                <path d="M0,20 L15,18 L30,12 L45,14 L60,8" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="kpi-subtext text-muted mt-1">@pctRes% del total</div>
+    </div>
+
+    <!-- KPI 4: Ocupadas -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-title">Salas Ocupadas</span>
+            <div class="kpi-icon-wrapper icon-bg-red">
+                <i class="fa-solid fa-user-check text-danger"></i>
+            </div>
+        </div>
+        <div class="d-flex align-items-baseline justify-content-between">
+            <div class="kpi-value text-danger">@kpiOcupadas</div>
+            <svg class="sparkline-svg" viewBox="0 0 60 24">
+                <path d="M0,22 L15,16 L30,18 L45,10 L60,6" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="kpi-subtext text-muted mt-1">@pctOcu% del total</div>
+    </div>
+</div>
+
+<!-- Navegación Secundaria por Pestañas (Tabs de Figma) -->
+<div class="reservas-tabs-header">
+    <button type="button" class="reservas-tab-btn active" id="tabBtnLista" onclick="switchReservasTab('lista')">
+        <i class="fa-solid fa-list-ul"></i> Vista de Lista
+    </button>
+    <button type="button" class="reservas-tab-btn" id="tabBtnTimeline" onclick="switchReservasTab('timeline')">
+        <i class="fa-solid fa-chart-gantt"></i> Vista de Ocupación
+    </button>
+</div>
+
+<!-- ==========================================
+     TAB 1: VISTA DE LISTA + SIDEBAR GUIAS
+     ========================================== -->
+<div id="viewContainerLista">
+    <!-- Barra de Filtros Sub-Header (Limpia y sin cuadro pesado, acorde a Figma) -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+            <div class="modern-search-wrapper">
+                <i class="fa-solid fa-magnifying-glass modern-search-icon"></i>
+                <input type="text" class="modern-search-input panel-search-input" placeholder="Buscar usuario o sala..." />
+            </div>
+            
+            <!-- Select Piso -->
+            <select class="modern-filter-select" id="selectFilterPiso" style="width: 135px;">
+                <option value="all">Piso: Todos</option>
+                <option value="1">Primer Piso</option>
+                <option value="2">Segundo Piso</option>
+                <option value="3">Tercer Piso</option>
+            </select>
+
+            <!-- Select Sala -->
+            <select class="modern-filter-select" id="selectFilterSala" style="width: 135px;">
+                <option value="all">Sala: Todas</option>
+                @foreach (var s in salas)
+                {
+                    <option value="@s.Nombre">@s.Nombre</option>
+                }
+            </select>
+
+            <!-- Select Estado -->
+            <select class="modern-filter-select" id="selectFilterEstado" style="width: 145px;">
+                <option value="all">Estado: Todos</option>
+                <option value="reservado">Reservado</option>
+                <option value="ocupado">Ocupado</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Layout 2 Columnas (Tabla Principal + Sidebar Guía) -->
+    <div class="reservas-content-grid">
+        <!-- Columna Izquierda: Tabla -->
+        <div class="admin-panel-card m-0">
+            <div class="premium-data-table-wrapper">
+                <table class="premium-data-table">
+                    <thead>
+                        <tr>
+                            <th>USUARIO</th>
+                            <th>SALA</th>
+                            <th>PISO</th>
+                            <th>HORARIO</th>
+                            <th>ESTADO</th>
+                            <th>TIEMPO RESTANTE</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-reservas-body">
+                        @if (!reservasActivas.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="fa-regular fa-folder-open mb-2 d-block fs-3"></i>
+                                    No hay reservas activas registradas en este momento.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var r in reservasActivas)
+                            {
+                                bool isOcupado = r.Sala.EstadoActual == "O";
+                                var endDateTime = ahora.Date.Add(r.HoraFin.ToTimeSpan());
+                                var rest = endDateTime - ahora;
+                                var pisoNombre = r.Sala.Piso == 1 ? "Primer Piso" : r.Sala.Piso == 2 ? "Segundo Piso" : "Tercer Piso";
+
+                                <tr class="reserva-row" data-piso="@r.Sala.Piso" data-estado="@(isOcupado ? "ocupado" : "reservado")">
+                                    <!-- Usuario -->
+                                    <td>
+                                        <div class="table-user-cell">
+                                            <div class="table-user-avatar">
+                                                @{
+                                                    var userInitials = "";
+                                                    if (r.Usuario.NombreCompleto.Contains(" "))
+                                                    {
+                                                        var parts = r.Usuario.NombreCompleto.Split(' ');
+                                                        userInitials = (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+                                                    }
+                                                    else if (r.Usuario.NombreCompleto.Length > 0)
+                                                    {
+                                                        userInitials = r.Usuario.NombreCompleto.Substring(0, Math.Min(2, r.Usuario.NombreCompleto.Length)).ToUpper();
+                                                    }
+                                                }
+                                                @userInitials
+                                            </div>
+                                            <div class="table-user-info-text">
+                                                <span class="table-user-name">@r.Usuario.NombreCompleto</span>
+                                                <span class="table-user-sub">@r.Usuario.CorreoUta</span>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Sala -->
+                                    <td>
+                                        <div class="fw-semibold text-dark">@r.Sala.Nombre</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Box de Estudio</div>
+                                    </td>
+
+                                    <!-- Piso -->
+                                    <td class="text-secondary" style="font-size: 0.8rem;">@pisoNombre</td>
+
+                                    <!-- Horario -->
+                                    <td class="fw-medium">@r.HoraInicio.ToString("HH:mm") - @r.HoraFin.ToString("HH:mm")</td>
+
+                                    <!-- Estado Badge -->
+                                    <td>
+                                        @if (isOcupado)
+                                        {
+                                            <span class="status-pill-badge badge-ocupado"><i class="fa-solid fa-circle me-1" style="font-size: 0.45rem;"></i>Ocupado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill-badge badge-reservado"><i class="fa-solid fa-circle me-1" style="font-size: 0.45rem;"></i>Reservado</span>
+                                        }
+                                    </td>
+
+                                    <!-- Tiempo Restante + Progress Bar -->
+                                    <td>
+                                        @if (rest.TotalMinutes <= 0)
+                                        {
+                                            <span class="text-secondary">-</span>
+                                        }
+                                        else
+                                        {
+                                            <div class="fw-semibold text-dark" style="font-size: 0.8rem;">
+                                                @(rest.Hours > 0 ? $"{rest.Hours} h {rest.Minutes} min" : $"{rest.Minutes} min")
+                                            </div>
+                                            <div class="progress mt-1" style="height: 4px; width: 80px; background-color: #E2E8F0;">
+                                                <div class="progress-bar @(isOcupado ? "bg-danger" : "bg-warning")" role="progressbar" style="width: @Math.Min(100, Math.Max(15, (int)(rest.TotalMinutes / 60.0 * 100)))%;"></div>
+                                            </div>
+                                        }
+                                    </td>
+
+                                    <!-- Acciones Directas -->
+                                    <td>
+                                        <div class="table-inline-actions">
+                                            @if (!isOcupado)
+                                            {
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="ocupar" />
+                                                    <button type="submit" class="btn-action-icon text-success" title="Marcar Ocupado / Presente">
+                                                        <i class="fa-solid fa-circle-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas cancelar esta reserva sin sancionar al estudiante? (Útil si se cancelaron clases o hubo un imprevisto).');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="liberar" />
+                                                    <button type="submit" class="btn-action-icon text-warning" title="Cancelar sin Sanción (Sin Falta)">
+                                                        <i class="fa-solid fa-ban"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Seguro que deseas marcar la inasistencia? Esto sumará una falta al estudiante.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="falta" />
+                                                    <button type="submit" class="btn-action-icon text-danger" title="Marcar Falta / Inasistencia">
+                                                        <i class="fa-solid fa-user-xmark"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-controller="Reservas" asp-action="GestionarAccionDashboard" method="post" class="d-inline" onsubmit="return confirm('¿Deseas liberar este box tempranamente? No se aplicará penalización.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reservaId" value="@r.Id" />
+                                                    <input type="hidden" name="accion" value="liberar" />
+                                                    <button type="submit" class="btn-action-icon text-warning" title="Liberar Box Temprano">
+                                                        <i class="fa-solid fa-door-open"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Pagination -->
+            <div class="table-pagination-footer">
+                <span class="pagination-info-text" id="pagination-info">Mostrando 0 a 0 de 0 resultados</span>
+                <div class="pagination-btn-group">
+                    <button type="button" class="btn-pagination-item" id="btnPagePrev" disabled><i class="fa-solid fa-chevron-left" style="font-size:0.75rem;"></i></button>
+                    <button type="button" class="btn-pagination-item active" id="btnPageNum">1</button>
+                    <button type="button" class="btn-pagination-item" id="btnPageNext" disabled><i class="fa-solid fa-chevron-right" style="font-size:0.75rem;"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Sidebar de Guías (Coincidente con Figma) -->
+        <div class="reservas-sidebar-column">
+            <!-- Card 1: Acciones Rápidas -->
+            <div class="sidebar-info-card">
+                <div class="sidebar-info-header">
+                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-bolt text-primary"></i></span>
+                    <span>Acciones rápidas</span>
+                </div>
+                <div class="guide-card-box guide-box-green">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-circle-check"></i> Marcar Ocupado
+                    </div>
+                    <div class="guide-box-desc">El alumno llegó al mesón y se confirma el uso del box.</div>
+                </div>
+                <div class="guide-card-box guide-box-yellow">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-ban"></i> Cancelar sin Sanción
+                    </div>
+                    <div class="guide-box-desc">Anula la reserva por imprevisto o suspensión de clases sin penalizar al alumno.</div>
+                </div>
+                <div class="guide-card-box guide-box-red">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-user-xmark"></i> Marcar Falta
+                    </div>
+                    <div class="guide-box-desc">Transcurrieron los 20 minutos sin presencia. Libera la sala y aplica falta.</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Leyenda de Estados -->
+            <div class="sidebar-info-card">
+                <div class="sidebar-info-header">
+                    <span class="sidebar-title-icon-badge icon-bg-blue"><i class="fa-solid fa-circle-info text-primary"></i></span>
+                    <span>Leyenda de estados</span>
+                </div>
+                <div class="guide-card-box guide-box-green">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-square"></i> Disponible
+                    </div>
+                    <div class="guide-box-desc">La sala está libre y puede ser reservada inmediatamente.</div>
+                </div>
+                <div class="guide-card-box guide-box-yellow">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-square"></i> Reservado
+                    </div>
+                    <div class="guide-box-desc">Sala reservada en espera de confirmación presencial del alumno.</div>
+                </div>
+                <div class="guide-card-box guide-box-red">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-square"></i> Ocupado
+                    </div>
+                    <div class="guide-box-desc">La sala está siendo utilizada activamente por un estudiante.</div>
+                </div>
+                <div class="guide-card-box guide-box-gray">
+                    <div class="guide-box-header">
+                        <i class="fa-solid fa-square opacity-50"></i> Sin reserva
+                    </div>
+                    <div class="guide-box-desc">Sin reserva programada para este horario.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     TAB 2: VISTA DE OCUPACIÓN POR SALAS (TIMELINE FIGMA)
+     ========================================== -->
+<div id="viewContainerTimeline" style="display: none;">
+    <div class="timeline-card-wrapper">
+        <div class="timeline-header-controls">
+            <div>
+                <h3 class="h5 fw-bold text-dark mb-0">
+                    Vista de ocupación por salas (hoy) <i class="fa-regular fa-circle-question text-muted ms-1 fs-6" title="Muestra el mapa cronológico del día en tiempo real"></i>
+                </h3>
+            </div>
+        </div>
+
+        <div class="timeline-grid">
+            <!-- Marker de Hora Actual (Línea Azul con Pin) -->
+            @{
+                double startHourGrid = 8.0; // 08:00 AM
+                double totalHoursGrid = 13.0; // 08:00 AM a 21:00 PM (13 horas)
+                double currentHourDouble = horaActual.Hour + (horaActual.Minute / 60.0);
+                double currentMarkerPct = Math.Min(100.0, Math.Max(0.0, ((currentHourDouble - startHourGrid) / totalHoursGrid) * 100.0));
+                // 140px es el ancho de la columna izquierda de nombres de sala
+            }
+            <div class="timeline-current-marker" style="left: calc(140px + (100% - 140px) * @(currentMarkerPct.ToString(System.Globalization.CultureInfo.InvariantCulture)) / 100);">
+                <div class="timeline-current-pin">@horaActual.ToString("HH:mm")</div>
+                <div class="timeline-current-dot"></div>
+            </div>
+
+            <!-- Horas Header (08:00 a 20:00) -->
+            <div class="timeline-hours-row">
+                <div>SALAS</div>
+                <div>08:00</div>
+                <div>09:00</div>
+                <div>10:00</div>
+                <div>11:00</div>
+                <div>12:00</div>
+                <div>13:00</div>
+                <div>14:00</div>
+                <div>15:00</div>
+                <div>16:00</div>
+                <div>17:00</div>
+                <div>18:00</div>
+                <div>19:00</div>
+                <div>20:00</div>
+            </div>
+
+            <!-- Filas por Pisos -->
+            @for (int piso = 1; piso <= 3; piso++)
+            {
+                var salasPiso = salas.Where(s => s.Piso == piso).ToList();
+                var pisoNombre = piso == 1 ? "Primer Piso" : piso == 2 ? "Segundo Piso" : "Tercer Piso";
+
+                <div class="timeline-floor-header">@pisoNombre</div>
+
+                foreach (var sala in salasPiso)
+                {
+                    var reservasSala = reservasActivas.Where(r => r.SalaId == sala.Id).ToList();
+
+                    <div class="timeline-room-row">
+                        <div class="timeline-room-name">@sala.Nombre</div>
+                        <div class="timeline-track">
+                            @foreach (var res in reservasSala)
+                            {
+                                double startResDouble = res.HoraInicio.Hour + (res.HoraInicio.Minute / 60.0);
+                                double endResDouble = res.HoraFin.Hour + (res.HoraFin.Minute / 60.0);
+                                double leftPct = Math.Min(100.0, Math.Max(0.0, ((startResDouble - startHourGrid) / totalHoursGrid) * 100.0));
+                                double widthPct = Math.Min(100.0 - leftPct, Math.Max(2.0, ((endResDouble - startResDouble) / totalHoursGrid) * 100.0));
+
+                                bool isOcupadoRes = sala.EstadoActual == "O";
+                                string classBlock = isOcupadoRes ? "timeline-block-ocupado" : "timeline-block-reservado";
+
+                                <div class="timeline-block-item @classBlock" style="left: @(leftPct.ToString(System.Globalization.CultureInfo.InvariantCulture))%; width: @(widthPct.ToString(System.Globalization.CultureInfo.InvariantCulture))%;" title="@res.Usuario.NombreCompleto (@res.HoraInicio.ToString("HH:mm") - @res.HoraFin.ToString("HH:mm"))">
+                                    @res.HoraInicio.ToString("HH:mm") - @res.HoraFin.ToString("HH:mm")
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Leyenda Timeline -->
+        <div class="d-flex align-items-center gap-4 mt-4 pt-3 border-top" style="font-size: 0.8rem;">
+            <div class="d-flex align-items-center gap-2"><span style="width: 14px; height: 14px; background-color: #D1FAE5; border: 1px solid #A7F3D0; border-radius: 3px;"></span> <span>Disponible</span></div>
+            <div class="d-flex align-items-center gap-2"><span style="width: 14px; height: 14px; background-color: #F59E0B; border-radius: 3px;"></span> <span>Reservado</span></div>
+            <div class="d-flex align-items-center gap-2"><span style="width: 14px; height: 14px; background-color: #EF4444; border-radius: 3px;"></span> <span>Ocupado</span></div>
+            <div class="d-flex align-items-center gap-2"><span style="width: 14px; height: 14px; background-color: #F1F5F9; border-radius: 3px;"></span> <span>Sin reserva</span></div>
+        </div>
+    </div>
+</div>
+</main>

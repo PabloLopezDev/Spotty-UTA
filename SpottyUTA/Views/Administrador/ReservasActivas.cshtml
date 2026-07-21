@@ -1,0 +1,443 @@
+@{
+    Layout = null;
+    var nombreAdmin = ViewBag.NombreAdministrador as string ?? "Administrador";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reservas Activas - Spotty UTA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+
+    <div class="admin-layout">
+
+        <!-- Sidebar Izquierda -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <img src="/logo-uta.png" alt="Escudo UTA" class="brand-logo-img" />
+                <h1 class="brand-text">SPOTTY <span>UTA</span></h1>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="@Url.Action("Dashboard", "Administrador")" class="menu-item-link">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                        <span class="menu-item-text">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("ReservasActivas", "Administrador")" class="menu-item-link active">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span class="menu-item-text">Reservas Activas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Index", "Home")" class="menu-item-link">
+                        <i class="fa-solid fa-door-open"></i>
+                        <span class="menu-item-text">Gestión de Salas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-item-link">
+                        <i class="fa-regular fa-user"></i>
+                        <span class="menu-item-text">Usuarios</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-item-link">
+                        <i class="fa-solid fa-user-slash"></i>
+                        <span class="menu-item-text">Usuarios Bloqueados</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-item-link">
+                        <i class="fa-regular fa-chart-bar"></i>
+                        <span class="menu-item-text">Reportes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-item-link">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span class="menu-item-text">Configuración</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="@Url.Action("CerrarSesion", "Auth")" class="sidebar-collapse-btn">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i>
+                    <span class="menu-item-text">Cerrar Sesión</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Contenedor Principal -->
+        <div class="admin-main-container">
+
+            <!-- Top Header -->
+            <header class="admin-top-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="header-role-label">Administrador</span>
+                    
+                    @if (SpottyUTA.Helpers.SimulationTime.IsEnabled)
+                    {
+                        <form asp-controller="Administrador" asp-action="ToggleSimulationMode" method="post" class="d-inline-flex align-items-center m-0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="enable" value="false" />
+                            <span class="badge bg-warning text-dark border me-2 py-1.5 px-3" style="font-size:0.75rem; border-radius: 8px;">
+                                <i class="fa-solid fa-flask-vial me-1"></i> SIMULACIÓN ACTIVA (Lunes 10:00)
+                            </span>
+                            <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-3 fw-bold" style="font-size:0.7rem; border-radius:6px;">
+                                Desactivar
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-controller="Administrador" asp-action="ToggleSimulationMode" method="post" class="d-inline-flex align-items-center m-0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="enable" value="true" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold" style="font-size:0.7rem; border-radius:6px;">
+                                <i class="fa-solid fa-play me-1"></i> Modo Simulación (Probar)
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <div class="header-right-actions">
+                    <!-- Campana Notificaciones -->
+                    <div class="notification-bell-container">
+                        <i class="fa-regular fa-bell bell-icon"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+
+                    <!-- Perfil Dropdown -->
+                    <div class="admin-profile-dropdown">
+                        <div class="profile-avatar-circle">
+                            @{
+                                var initials = "";
+                                if (nombreAdmin.Contains(" "))
+                                {
+                                    var parts = nombreAdmin.Split(' ');
+                                    if (parts.Length >= 2) initials = (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+                                    else initials = parts[0][0].ToString().ToUpper();
+                                }
+                                else if (nombreAdmin.Length > 0)
+                                {
+                                    initials = nombreAdmin.Substring(0, Math.Min(2, nombreAdmin.Length)).ToUpper();
+                                }
+                                @initials
+                            }
+                        </div>
+                        <span class="profile-name-text">@nombreAdmin</span>
+                        <i class="fa-solid fa-chevron-down profile-chevron"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area (Updated via SignalR) -->
+            <div id="reservas-activas-content-area">
+                @await Html.PartialAsync("_ReservasActivasContent")
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <script>
+        // Configuración de SignalR para refresco en tiempo real
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/salasHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ActualizarMatrizSalas", function () {
+            refrescarContenidoReservas();
+        });
+
+        connection.start().then(function () {
+            console.log("SignalR conectado en Reservas Activas.");
+        }).catch(function (err) {
+            console.error("Error al conectar SignalR en Reservas Activas: ", err.toString());
+        });
+
+        function refrescarContenidoReservas() {
+            fetch('/Administrador/ReservasActivas?partial=true')
+                .then(response => response.text())
+                .then(html => {
+                    const area = document.getElementById('reservas-activas-content-area');
+                    if (area) {
+                        area.innerHTML = html;
+                        syncCheckboxesFromState();
+                        updateTableDisplay();
+                        switchReservasTab(activeTab);
+                    }
+                })
+                .catch(err => console.error("Error al refrescar reservas activas: ", err));
+        }
+
+        // Paginación y Filtros Locales
+        let currentPage = 1;
+        const pageSize = 5;
+        let selectedFloors = [1, 2, 3];
+        let selectedStates = ['reservado', 'ocupado'];
+        let currentSearch = '';
+
+        function syncCheckboxesFromState() {
+            const allFloorsChecked = selectedFloors.length === 3;
+            const chkAll = document.getElementById('chkPisoAll');
+            if (chkAll) chkAll.checked = allFloorsChecked;
+
+            [1, 2, 3].forEach(floor => {
+                const chk = document.getElementById(`chkPiso${floor}`);
+                if (chk) chk.checked = selectedFloors.includes(floor);
+            });
+
+            const chkRes = document.getElementById('chkEstReservado');
+            if (chkRes) chkRes.checked = selectedStates.includes('reservado');
+
+            const chkOcu = document.getElementById('chkEstOcupado');
+            if (chkOcu) chkOcu.checked = selectedStates.includes('ocupado');
+
+            const searchInput = document.querySelector('.panel-search-input');
+            if (searchInput) searchInput.value = currentSearch;
+        }
+
+        function updateTableDisplay() {
+            const rows = Array.from(document.querySelectorAll('.reserva-row'));
+            const searchLower = currentSearch.toLowerCase().trim();
+
+            const filteredRows = rows.filter(row => {
+                const textContent = row.textContent.toLowerCase();
+                const floor = parseInt(row.getAttribute('data-piso'));
+                const state = row.getAttribute('data-estado');
+
+                const matchesSearch = !searchLower || textContent.includes(searchLower);
+                const matchesFloor = selectedFloors.includes(floor);
+                const matchesState = selectedStates.includes(state);
+                const matchesSala = selectedSala === 'all' || textContent.includes(selectedSala.toLowerCase());
+
+                return matchesSearch && matchesFloor && matchesState && matchesSala;
+            });
+
+            const totalFiltered = filteredRows.length;
+            const totalPages = Math.ceil(totalFiltered / pageSize) || 1;
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            rows.forEach(row => row.style.display = 'none');
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageRows = filteredRows.slice(startIndex, endIndex);
+
+            pageRows.forEach(row => row.style.display = '');
+
+            const infoEl = document.getElementById('pagination-info');
+            if (infoEl) {
+                if (totalFiltered === 0) {
+                    infoEl.textContent = 'Mostrando 0 a 0 de 0 resultados';
+                } else {
+                    const from = startIndex + 1;
+                    const to = Math.min(endIndex, totalFiltered);
+                    infoEl.textContent = `Mostrando ${from} a ${to} de ${totalFiltered} resultados`;
+                }
+            }
+
+            const btnPrev = document.getElementById('btnPagePrev');
+            const btnNext = document.getElementById('btnPageNext');
+            const btnNum = document.getElementById('btnPageNum');
+
+            if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+            if (btnNext) btnNext.disabled = (currentPage >= totalPages || totalFiltered === 0);
+            if (btnNum) btnNum.textContent = currentPage;
+        }
+
+        // Delegación de Eventos para Paginación y Búsqueda
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.closest('#btnPagePrev')) {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTableDisplay();
+                }
+            } else if (e.target && e.target.closest('#btnPageNext')) {
+                currentPage++;
+                updateTableDisplay();
+            }
+        });
+
+        document.addEventListener('input', (e) => {
+            if (e.target && e.target.classList.contains('panel-search-input')) {
+                currentSearch = e.target.value;
+                currentPage = 1;
+                updateTableDisplay();
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.id === 'chkPisoAll') {
+                const isChecked = e.target.checked;
+                document.querySelectorAll('.filter-piso-checkbox').forEach(cb => {
+                    cb.checked = isChecked;
+                });
+            } else if (e.target && e.target.classList.contains('filter-piso-checkbox')) {
+                const allPisos = Array.from(document.querySelectorAll('.filter-piso-checkbox'));
+                const checkedPisos = allPisos.filter(cb => cb.checked);
+                const allCb = document.getElementById('chkPisoAll');
+                if (allCb) {
+                    allCb.checked = allPisos.length === checkedPisos.length;
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'btnApplyFilters') {
+                selectedFloors = Array.from(document.querySelectorAll('.filter-piso-checkbox:checked'))
+                    .map(cb => parseInt(cb.value));
+                selectedStates = Array.from(document.querySelectorAll('.filter-estado-checkbox:checked'))
+                    .map(cb => cb.value);
+                
+                currentPage = 1;
+                updateTableDisplay();
+
+                const menu = e.target.closest('.filter-dropdown-menu');
+                if (menu) menu.classList.remove('show');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'btnCleanFilters') {
+                const allCb = document.getElementById('chkPisoAll');
+                if (allCb) allCb.checked = true;
+                
+                document.querySelectorAll('.filter-piso-checkbox').forEach(cb => cb.checked = true);
+                document.querySelectorAll('.filter-estado-checkbox').forEach(cb => cb.checked = true);
+                
+                selectedFloors = [1, 2, 3];
+                selectedStates = ['reservado', 'ocupado'];
+                currentPage = 1;
+                updateTableDisplay();
+
+                const menu = e.target.closest('.filter-dropdown-menu');
+                if (menu) menu.classList.remove('show');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('btn-close-dropdown')) {
+                const menu = e.target.closest('.filter-dropdown-menu');
+                if (menu) menu.classList.remove('show');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.filter-dropdown-toggle');
+            
+            if (toggleBtn) {
+                const dropdownMenu = toggleBtn.nextElementSibling;
+                if (dropdownMenu) {
+                    dropdownMenu.classList.toggle('show');
+                    syncCheckboxesFromState();
+                }
+                e.stopPropagation();
+            } else {
+                const insideFilterDropdown = e.target.closest('.filter-dropdown-menu');
+                
+                if (!insideFilterDropdown) {
+                    document.querySelectorAll('.filter-dropdown-menu').forEach(menu => {
+                        menu.classList.remove('show');
+                    });
+                }
+            }
+        });
+
+        // Cambios de Pestañas (Vista de Lista vs. Timeline)
+        let activeTab = 'lista';
+        function switchReservasTab(tab) {
+            activeTab = tab;
+            const btnLista = document.getElementById('tabBtnLista');
+            const btnTimeline = document.getElementById('tabBtnTimeline');
+            const containerLista = document.getElementById('viewContainerLista');
+            const containerTimeline = document.getElementById('viewContainerTimeline');
+
+            if (tab === 'lista') {
+                if (btnLista) btnLista.classList.add('active');
+                if (btnTimeline) btnTimeline.classList.remove('active');
+                if (containerLista) containerLista.style.display = 'block';
+                if (containerTimeline) containerTimeline.style.display = 'none';
+            } else {
+                if (btnTimeline) btnTimeline.classList.add('active');
+                if (btnLista) btnLista.classList.remove('active');
+                if (containerTimeline) containerTimeline.style.display = 'block';
+                if (containerLista) containerLista.style.display = 'none';
+            }
+        }
+
+        let selectedSala = 'all';
+
+        // Manejo de select de Piso, Sala y Estado directo
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.id === 'selectFilterPiso') {
+                const val = e.target.value;
+                selectedFloors = val === 'all' ? [1, 2, 3] : [parseInt(val)];
+                currentPage = 1;
+                syncCheckboxesFromState();
+                updateTableDisplay();
+            } else if (e.target && e.target.id === 'selectFilterSala') {
+                selectedSala = e.target.value;
+                currentPage = 1;
+                updateTableDisplay();
+            } else if (e.target && e.target.id === 'selectFilterEstado') {
+                const val = e.target.value;
+                selectedStates = val === 'all' ? ['reservado', 'ocupado'] : [val];
+                currentPage = 1;
+                syncCheckboxesFromState();
+                updateTableDisplay();
+            }
+        });
+
+        // Botón de Reset Rápido
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.closest('#btnQuickReset')) {
+                selectedFloors = [1, 2, 3];
+                selectedStates = ['reservado', 'ocupado'];
+                selectedSala = 'all';
+                currentSearch = '';
+                currentPage = 1;
+
+                const selPiso = document.getElementById('selectFilterPiso');
+                const selSala = document.getElementById('selectFilterSala');
+                const selEst = document.getElementById('selectFilterEstado');
+                if (selPiso) selPiso.value = 'all';
+                if (selSala) selSala.value = 'all';
+                if (selEst) selEst.value = 'all';
+
+                syncCheckboxesFromState();
+                updateTableDisplay();
+            } else if (e.target && e.target.closest('#btnFilterToggleHeader')) {
+                const popup = document.querySelector('.filter-card-popup');
+                if (popup) {
+                    popup.classList.toggle('show');
+                    syncCheckboxesFromState();
+                }
+                e.stopPropagation();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            syncCheckboxesFromState();
+            updateTableDisplay();
+        });
+    </script>
+</body>
+</html>

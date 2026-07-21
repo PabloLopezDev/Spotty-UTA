@@ -79,7 +79,7 @@ namespace SpottyUTA.Controllers
                 {
                     return RedirectToAction("Index", "Home");
                 }
-                return RedirectToAction("AdminDashboard");
+                return RedirectToAction("Dashboard", "Administrador");
             }
 
             if (successMessage != null)
@@ -91,7 +91,7 @@ namespace SpottyUTA.Controllers
                 TempData["WarningMessage"] = warningMessage;
             }
 
-            return RedirectToAction("AdminDashboard");
+            return RedirectToAction("Dashboard", "Administrador");
         }
     }
 }

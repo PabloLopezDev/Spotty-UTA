@@ -23,7 +23,13 @@ namespace SpottyUTA.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var ahora = DateTime.Now;
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+            if (rol == "Administrador")
+            {
+                return RedirectToAction("Dashboard", "Administrador");
+            }
+
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
             var fechaActual = DateOnly.FromDateTime(ahora);
             var horaActual = TimeOnly.FromDateTime(ahora);
 

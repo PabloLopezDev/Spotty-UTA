@@ -58,10 +58,26 @@ namespace SpottyUTA.Services
 
             if (reservaActual != null)
             {
+                // Si el administrador ya confirmó la asistencia presencial en el mesón
+                if (sala.EstadoActual == "O")
+                {
+                    return "O"; // Ocupado (Rojo)
+                }
+
+                // Si no ha confirmado, tiene 20 minutos de tolerancia para presentarse
                 var minutosTranscurridos = (horaActual.ToTimeSpan() - reservaActual.HoraInicio.ToTimeSpan()).TotalMinutes;
-                return minutosTranscurridos <= 15 ? "R" : "O";
+                if (minutosTranscurridos <= 20)
+                {
+                    return "R"; // Reservado / En espera (Amarillo)
+                }
+                else
+                {
+                    // Pasaron los 20 minutos y no se confirmó la asistencia -> Se libera la sala
+                    return "D"; // Disponible (Verde)
+                }
             }
 
+            // Si no hay reserva en curso, verificamos si hay una reserva próxima en los siguientes 20 minutos
             var proximaReservaCercana = reservasDeEstaSala.Any(r =>
                 r.HoraInicio > horaActual &&
                 (r.HoraInicio.ToTimeSpan() - horaActual.ToTimeSpan()).TotalMinutes <= 20);
@@ -71,7 +87,7 @@ namespace SpottyUTA.Services
 
         public async Task<List<object>> ObtenerPayloadEstadosSalasAsync()
         {
-            var ahora = DateTime.Now;
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
             var fechaActual = DateOnly.FromDateTime(ahora);
             var horaActual = TimeOnly.FromDateTime(ahora);
 
@@ -100,7 +116,7 @@ namespace SpottyUTA.Services
                     inicioStr = reservaActual.HoraInicio.ToString("HH:mm");
                     finStr = reservaActual.HoraFin.ToString("HH:mm");
 
-                    var fechaYHoraCierre = DateTime.Today.Add(reservaActual.HoraFin.ToTimeSpan());
+                    var fechaYHoraCierre = SpottyUTA.Helpers.SimulationTime.Today.Add(reservaActual.HoraFin.ToTimeSpan());
                     cierreUnix = new DateTimeOffset(fechaYHoraCierre).ToUnixTimeSeconds();
                 }
 

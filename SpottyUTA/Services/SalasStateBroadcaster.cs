@@ -58,7 +58,42 @@ namespace SpottyUTA.Services
         private async Task BroadcastEstadosAsync(CancellationToken cancellationToken)
         {
             using var scope = _services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<SpottyUtaContext>();
             var salasService = scope.ServiceProvider.GetRequiredService<ISalasService>();
+
+            // Limpieza automática de estados "Ocupado" (O) que hayan expirado (cuando termina el bloque de la reserva)
+            var ahora = SpottyUTA.Helpers.SimulationTime.Now;
+            var hoy = DateOnly.FromDateTime(ahora);
+            var horaActual = TimeOnly.FromDateTime(ahora);
+
+            var salasOcupadas = await context.Salas
+                .Where(s => s.EstadoActual == "O")
+                .ToListAsync(cancellationToken);
+
+            bool cambiosRealizados = false;
+            foreach (var sala in salasOcupadas)
+            {
+                var tieneReservaVigenteActiva = await context.Reservas
+                    .AnyAsync(r => r.SalaId == sala.Id && 
+                                   r.Fecha == hoy && 
+                                   r.HoraInicio <= horaActual && 
+                                   r.HoraFin > horaActual && 
+                                   (r.EstadoReserva == "A" || r.EstadoReserva == "Activa"), 
+                              cancellationToken);
+
+                if (!tieneReservaVigenteActiva)
+                {
+                    sala.EstadoActual = "D";
+                    context.Entry(sala).State = EntityState.Modified;
+                    cambiosRealizados = true;
+                }
+            }
+
+            if (cambiosRealizados)
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
+
             await salasService.BroadcastEstadosAsync();
         }
     }
